@@ -1,0 +1,7 @@
+name = "noripalooza"
+compatibility_date = "2026-11-01"
+pages_build_output_dir = "public"
+
+[[kv_namespaces]]
+binding = "NORI_KV"
+id = "e61cf35da8ff473888e679c522920aa2"

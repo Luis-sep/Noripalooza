@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noripalooza · Tu festival</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: tender, playful, a gift between two people.
+   IDEA: a festival wristband + a passport of envelopes, one per day.
+   PICTURE: the line-up as ticket stubs and an envelope that opens.
+   COLOUR and TYPE: forest green, terracotta, mustard on warm paper; Bungee + Space Grotesk.
+   LAYOUT: one calm phone column; hero with today, line-up, album. */
+:root{color-scheme:light dark;
+--bg:light-dark(#F6EEDC,#13201A);--card:light-dark(#FFFDF7,#1D2C23);--ink:light-dark(#1B1B1B,#F3ECDD);
+--muted:light-dark(#55524B,#BDB6A8);--forest:light-dark(#2F5D3A,#93C296);--terra:light-dark(#B0532A,#E58E60);
+--gold:light-dark(#E2A729,#E9B94A);--moss:light-dark(#7C9A4E,#9DB873);--line:light-dark(#E3D8C1,#2E4034);--on:light-dark(#FFF8EE,#13201A)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Space Grotesk",system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:640px;margin:0 auto;padding:clamp(20px,4vw,40px) 16px 64px}
+.brand{font-family:Bungee,system-ui,sans-serif;font-weight:400;line-height:.95;margin:0;text-align:center}
+.brand .a{display:block;font-size:clamp(56px,16vw,92px);color:var(--terra)}
+.brand .b{display:flex;justify-content:center;align-items:center;gap:4px;font-size:clamp(34px,10vw,58px);color:var(--forest)}
+.brand svg{width:1.9em;height:.88em}
+.dates{text-align:center;margin:10px 0 0;font-weight:700;color:var(--forest)}
+.banner{margin:16px 0 0;padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--muted);font-size:14px}
+.banner:empty{display:none}
+.hero{margin-top:22px;background:var(--forest);color:var(--on);border-radius:22px;padding:22px}
+.hero h2{font-family:Bungee,sans-serif;font-weight:400;font-size:28px;line-height:1.1;margin:4px 0 8px;text-wrap:balance}
+.hero p{margin:0}
+.hero .k{font-size:14px;font-weight:700;opacity:.9}
+.stamps{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.stamp{width:26px;height:26px;border-radius:50%;border:2px dashed currentColor;opacity:.55}
+.stamp.op{opacity:1;border-style:solid}
+.stamp.ok{opacity:1;border:0;background:var(--gold)}
+.btn{font:inherit;font-weight:700;min-height:44px;padding:10px 18px;border-radius:999px;border:0;cursor:pointer;background:var(--terra);color:#FFF8EE;display:inline-flex;align-items:center;gap:8px}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.light{background:var(--on);color:var(--forest)}
+.btn:focus-visible,.day:focus-visible,.chip:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn[disabled]{opacity:.5;cursor:default}
+h3.sec{font-family:Bungee,sans-serif;font-weight:400;font-size:24px;color:var(--terra);margin:34px 0 12px}
+.list{display:grid;gap:10px}
+.day{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:16px;cursor:pointer;width:100%}
+.day.today{border:2px solid var(--terra)}
+.day .d{flex:none;width:58px;text-align:center;color:var(--forest)}
+.day .d b{display:block;font-family:Bungee,sans-serif;font-weight:400;font-size:26px;line-height:1}
+.day .d span{font-size:13px;font-weight:700}
+.day .t{flex:1}
+.day .t b{display:block;font-size:17px}
+.day .t span{font-size:14px;color:var(--muted)}
+.pill{flex:none;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap;background:var(--line);color:var(--ink)}
+.pill.ready{background:var(--terra);color:#FFF8EE}
+.pill.ok{background:var(--gold);color:#1B1B1B}
+.album{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.album figure{margin:0;position:relative}
+.album img,.photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block;background:var(--line)}
+.album figcaption{position:absolute;left:6px;bottom:6px;font-size:12px;font-weight:700;background:var(--card);color:var(--ink);padding:1px 7px;border-radius:999px}
+.empty{color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:18px;text-align:center}
+.overlay{position:fixed;inset:0;background:rgba(10,20,14,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.overlay[hidden]{display:none}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:20px 18px 36px}
+.sheet .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet .top span{font-weight:700;color:var(--forest)}
+.close{all:unset;cursor:pointer;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;font-size:26px;color:var(--ink)}
+.close:focus-visible{outline:3px solid var(--gold)}
+.sheet h2{font-family:Bungee,sans-serif;font-weight:400;font-size:30px;line-height:1.1;color:var(--terra);margin:6px 0 10px;text-wrap:balance}
+.reto{font-size:19px;line-height:1.5;margin:0 0 16px;text-wrap:pretty}
+.env{display:block;width:min(300px,80%);margin:18px auto}
+.env .flap{transform-origin:150px 40px;transition:transform .7s ease}
+.env.open .flap{transform:scaleY(-1)}
+.env .card{transition:transform .7s ease .35s}
+.env.open .card{transform:translateY(-46px)}
+@media (prefers-reduced-motion:reduce){.env .flap,.env .card{transition:none}}
+.carta{background:var(--card);border-left:0;border:2px solid var(--gold);border-radius:14px;padding:12px 14px;margin:0 0 16px}
+.carta b{color:var(--forest)}
+.lbl{display:block;font-weight:700;margin:16px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:15px;min-height:44px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--forest);border-color:var(--forest);color:var(--on)}
+textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.saved{font-size:14px;color:var(--muted)}
+.photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.song{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;text-decoration:none;color:var(--ink);background:var(--card);border:2px solid var(--moss);border-radius:14px;padding:10px 14px;margin:0 0 6px}
+.song span{width:100%;font-size:13px;font-weight:700;color:var(--forest)}
+.inp{width:100%;font:inherit;font-size:16px;min-height:44px;padding:10px 12px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.inp:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.extra{margin-top:30px;padding-top:20px;border-top:2px dashed var(--line)}
+.extra h3{font-family:Bungee,sans-serif;font-weight:400;font-size:22px;color:var(--forest);margin:0 0 10px}
+.letter{white-space:pre-wrap;background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:16px;font-size:17px;line-height:1.6}
+.sealed{background:var(--forest);color:var(--on);border-radius:16px;padding:16px;margin:0}
+.scroll{overflow-x:auto}
+.ptable{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px;background:var(--card);border-radius:14px;overflow:hidden}
+.ptable th,.ptable td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.ptable th{background:var(--line);font-size:14px}
+.foot{margin-top:36px;text-align:center;color:var(--muted);font-size:14px}
+</style>
+<style>
+.login{max-width:420px;margin:28px auto 0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
+.login h2{font-family:Bungee,sans-serif;font-weight:400;font-size:24px;color:var(--forest);margin:0 0 8px}
+.login form{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.err{color:var(--terra);font-weight:700;margin:0}
+.nedit{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
+.nedit b{display:block;margin-bottom:6px}
+.nedit textarea{min-height:70px}
+.link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1 class="brand"><span class="a">NORI</span><span class="b">PAL<svg viewBox="0 0 292 134" role="img" aria-label="OO"><rect x="10" y="18" width="118" height="100" rx="34" fill="none" stroke="currentColor" stroke-width="18"/><rect x="164" y="18" width="118" height="100" rx="34" fill="none" stroke="currentColor" stroke-width="18"/><path d="M128 52 Q146 36 164 52" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/><path d="M223 86 L228 72 L233 86 L247 91 L233 96 L228 110 L223 96 L209 91 Z" fill="#E2A729"/></svg>ZA</span></h1>
+<p class="dates">27 nov — 6 dic 2026 · Festival del brillo</p>
+<p class="banner" id="banner" role="status"></p>
+
+<section class="login" id="login" hidden>
+<h2>Bienvenida</h2>
+<p>Escribe tu clave del festival para entrar.</p>
+<form id="loginForm">
+<label class="lbl" for="clave" style="margin:0">Clave</label>
+<input class="inp" id="clave" type="password" autocomplete="current-password" required>
+<button class="btn" type="submit">Entrar</button>
+<p class="err" id="loginErr" role="alert"></p>
+</form>
+</section>
+
+<div id="app" hidden>
+<section id="panel"></section>
+<section class="hero" id="hero" aria-live="polite"></section>
+<h3 class="sec">Line-up</h3>
+<div class="list" id="list"></div>
+<h3 class="sec">Álbum del festival</h3>
+<div id="album"></div>
+<p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="logout">Salir</button></p>
+</div>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet"></div>
+</div>
+
+<script>
+{
+const MOODS=['Radiante','Inspirada','Tranquila','Cansada','Removida'];
+const CUMPLIO=['Sí','Más de lo esperado','No tanto','Fue distinto'];
+const PASSES=2;
+let S=null,openKey=null,busy=false,capDraft='';
+const drafts={},expDrafts={},notaDrafts={};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const setBanner=t=>{$('banner').textContent=t};
+const ERR={'sin-pases':'Ya usaste tus 2 pases libres.','bloqueado':'Ese sobre todavía no se abre.','tamano':'La foto es muy grande.','tipo':'Ese archivo no es una foto.','ya-sellada':'La cápsula ya está sellada.','vacia':'Escribe algo antes de sellar.'};
+const isLuis=()=>S&&S.role==='luis';
+const data=k=>(S&&S.progreso[k])||{};
+const dayOf=k=>S.days.find(d=>d.k===k);
+const passesUsed=()=>S.days.filter(d=>data(d.k).pass).length;
+
+async function api(path,opts={}){
+ const r=await fetch(path,{credentials:'same-origin',...opts});
+ if(r.status===401){showLogin();throw new Error('auth')}
+ const j=await r.json().catch(()=>({}));
+ if(!r.ok)throw new Error(j.error||'red');
+ return j}
+async function load(){try{S=await api('/api/estado');showApp()}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
+async function post(path,body){if(busy)return;busy=true;
+ try{S=await api(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});setBanner('');render();return true}
+ catch(e){if(e.message!=='auth')setBanner(ERR[e.message]||'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');return false}
+ finally{busy=false}}
+
+function showLogin(){$('login').hidden=false;$('app').hidden=true;$('overlay').hidden=true}
+function showApp(){$('login').hidden=true;$('app').hidden=false;render()}
+
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginErr').textContent='';
+ try{const r=await fetch('/api/login',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({clave:$('clave').value})});
+  if(!r.ok){$('loginErr').textContent='Esa clave no es. Inténtalo de nuevo.';return}
+  $('clave').value='';await load()}catch(_){$('loginErr').textContent='No hay conexión.'}});
+$('logout').addEventListener('click',async()=>{try{await fetch('/api/login',{method:'DELETE',credentials:'same-origin'})}catch(_){}S=null;showLogin()});
+
+function status(d){const x=data(d.k);
+ if(x.pass)return['Pase libre','ok'];if(x.done)return['Cumplido','ok'];
+ if(!d.unlocked)return['Se abre el '+d.n,''];if(x.opened)return['Abierto',''];return['¡Sobre listo!','ready']}
+
+function renderHero(){const h=$('hero');const first=S.days[0].date,last=S.days[S.days.length-1].date,t=S.today;
+ const stamps=S.days.map(d=>{const x=data(d.k);return`<span class="stamp ${x.done||x.pass?'ok':x.opened?'op':''}" title="${esc(d.t)}"></span>`}).join('');
+ const doneN=S.days.filter(d=>data(d.k).done||data(d.k).pass).length;let body;
+ if(t<first){const n=Math.round((Date.parse(first)-Date.parse(t))/864e5);body=`<p class="k">Tu festival empieza pronto</p><h2>Faltan ${n} ${n===1?'día':'días'}</h2><p>El viernes 27 se abre tu primer sobre.</p>`}
+ else if(t>last){body=`<p class="k">El festival terminó</p><h2>Lo que creaste se queda contigo</h2><p>Revive cada día en el álbum.</p><div class="row"><button class="btn light" data-open="d06">Ver mi cierre</button></div>`}
+ else{const d=S.days.find(x=>x.date===t)||S.days[0];const x=data(d.k);
+  body=`<p class="k">Hoy · ${d.dow} ${d.n} ${d.m}</p><h2>${esc(d.t)}</h2><p>${esc(d.s)}</p><div class="row"><button class="btn light" data-open="${d.k}">${x.opened||isLuis()?'Ver el sobre de hoy':'Abrir el sobre de hoy'}</button></div>`}
+ h.innerHTML=body+`<div class="stamps" aria-label="${doneN} de 10 retos cumplidos">${stamps}</div><p class="k" style="margin-top:8px">${doneN} de 10 retos · ${PASSES-passesUsed()} pases libres</p>`}
+
+function renderList(){$('list').innerHTML=S.days.map(d=>{const[s,c]=status(d);
+ return`<button class="day ${d.date===S.today?'today':''}" data-open="${d.k}"><span class="d"><span>${d.dow}</span><b>${d.n}</b></span><span class="t"><b>${esc(d.t)}</b><span>${esc(d.s)}</span></span><span class="pill ${c}">${s}</span></button>`}).join('')}
+
+function renderAlbum(){const all=[];S.days.forEach(d=>(data(d.k).photos||[]).forEach(id=>all.push({id,d})));
+ $('album').innerHTML=all.length?`<div class="album">${all.map(({id,d})=>`<figure><img src="/api/foto/${encodeURIComponent(id)}" alt="Foto del ${d.dow} ${d.n}" loading="lazy"><figcaption>${d.n} ${d.m}</figcaption></figure>`).join('')}</div>`
+ :`<p class="empty">Aquí van a aparecer las fotos de cada día.</p>`}
+
+function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
+ const rows=S.days.map(d=>{const x=data(d.k);return`<tr><td>${d.dow} ${d.n}</td><td>${esc(d.t)}</td><td>${x.opened?'Sí':'No'}</td><td>${x.pass?'Pase libre':x.done?'Cumplido':'—'}</td><td>${esc(x.mood||'—')}</td><td>${esc(x.cumplio||'—')}</td><td>${(x.photos||[]).length}</td></tr>`}).join('');
+ const notas=S.days.map(d=>`<div class="nedit"><b>${d.dow} ${d.n} · ${esc(d.t)}</b><label class="lbl" for="nc-${d.k}" style="margin:0 0 4px">Tu nota</label><textarea id="nc-${d.k}">${esc(notaDrafts[d.k]?.carta??d.carta??'')}</textarea><label class="lbl" for="np-${d.k}" style="margin:8px 0 4px">Pista del regalo (opcional)</label><input class="inp" id="np-${d.k}" value="${esc(notaDrafts[d.k]?.pista??d.pista??'')}"><div class="row"><button class="btn ghost" data-nota="${d.k}">Guardar nota</button></div></div>`).join('');
+ el.innerHTML=`<h3 class="sec" style="margin-top:20px">Panel de Luis</h3><p class="saved">Ves cómo va Nori sin leer lo que escribe: eso queda para ella. Puedes abrir cualquier sobre para revisarlo.</p>
+ <div class="scroll"><table class="ptable"><thead><tr><th>Día</th><th>Sobre</th><th>Abierto</th><th>Reto</th><th>Ánimo</th><th>¿Se cumplió?</th><th>Fotos</th></tr></thead><tbody>${rows}</tbody></table></div>
+ <section class="extra"><h3>Tus notas</h3>${notas}</section>
+ <section class="extra"><h3>Carta del festival</h3><p class="saved">El domingo 6 Nori puede copiar su semana y mandártela. Pégala en el chat con Claude, pídele la carta y pégala aquí: le aparece en su último sobre.</p><textarea id="resumen">${esc(S.resumen)}</textarea><div class="row"><button class="btn" data-act="resumen">Guardar carta</button></div>
+ <p class="saved">Cápsula del tiempo: ${S.capsula.sealedAt?'sellada':'todavía no la escribe'}.</p></section>`}
+
+const ENV=`<svg class="env" id="env" viewBox="0 0 300 220" aria-hidden="true"><rect class="card" x="40" y="60" width="220" height="130" rx="8" fill="var(--card)" stroke="var(--line)" stroke-width="3"/><rect x="10" y="40" width="280" height="170" rx="14" fill="var(--terra)"/><path d="M10 200 L150 120 L290 200" fill="none" stroke="#FFF8EE" stroke-opacity=".35" stroke-width="4"/><path class="flap" d="M10 54 Q10 40 24 40 L276 40 Q290 40 290 54 L150 140 Z" fill="var(--forest)"/><circle cx="150" cy="128" r="16" fill="var(--gold)"/></svg>`;
+
+function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
+
+function extrasHtml(ro){let h=`<section class="extra"><h3>Tu carta del festival</h3>`;
+ if(S.resumen)h+=`<div class="letter">${esc(S.resumen)}</div>`;
+ else if(!ro)h+=`<p class="saved">Si quieres, copia tu semana y mándasela a Luis: él te va a preparar una carta sobre todo lo que viviste.</p><div class="row"><button class="btn ghost" data-act="copy">Copiar mi semana</button><span class="saved" id="copied"></span></div><textarea id="weekbox" hidden readonly></textarea>`;
+ else h+=`<p class="saved">Todavía no hay carta.</p>`;
+ h+=`</section><section class="extra"><h3>Cápsula del tiempo</h3>`;
+ if(S.capsula.text)h+=`<div class="letter">${esc(S.capsula.text)}</div>`;
+ else if(S.capsula.sealedAt)h+=`<p class="sealed">Tu carta está sellada. Se abre el 1 de diciembre de 2027, en tu próximo cumpleaños.</p>`;
+ else if(!ro)h+=`<label class="lbl" for="cap">Escríbele a la Nori del 1 de diciembre de 2027</label><textarea id="cap" placeholder="¿Qué quieres recordarte? ¿Qué esperas haber hecho?">${esc(capDraft)}</textarea><div class="row"><button class="btn" data-act="seal">Sellar cápsula</button></div>`;
+ else h+=`<p class="saved">Nori todavía no la escribe.</p>`;
+ return h+`</section>`}
+
+function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.k);const s=$('sheet');
+ const a=document.activeElement;if(s.contains(a)&&['TEXTAREA','INPUT'].includes(a.tagName)&&a.type!=='file')return;
+ const ro=isLuis();
+ let h=`<div class="top"><span>${d.dow} ${d.n} ${d.m}</span><button class="close" data-close aria-label="Cerrar">×</button></div><h2 id="sheet-title">${esc(d.t)}</h2>`;
+ if(!d.unlocked&&!ro){h+=ENV+`<p class="reto" style="text-align:center">Este sobre se abre el ${d.n} de ${d.m==='nov'?'noviembre':'diciembre'}. ¡Paciencia!</p>`}
+ else if(!x.opened&&!ro){h+=ENV+`<div class="row" style="justify-content:center"><button class="btn" data-act="open">Abrir sobre</button></div>`}
+ else{
+  if(ro)h+=`<p class="saved">Vista de Luis: así lo verá Nori.</p>`;
+  h+=`<p class="reto">${esc(d.r)}</p>`;
+  if(d.carta)h+=`<p class="carta"><b>Una nota de Luis:</b> ${esc(d.carta)}</p>`;
+  if(d.pista)h+=`<p class="carta"><b>Pista de tu regalo:</b> ${esc(d.pista)}</p>`;
+  h+=`<a class="song" href="https://open.spotify.com/search/${encodeURIComponent(d.c+' '+d.a)}" target="_blank" rel="noopener"><span>Canción del día · abrir en Spotify</span><b>${esc(d.c)}</b> ${esc(d.a)}</a>`;
+  if(!ro){
+   h+=`<label class="lbl" for="exp">¿Qué esperas de hoy?</label><input class="inp" id="exp" value="${esc(expDrafts[d.k]??x.expectativa??'')}" placeholder="Una frase basta">`;
+   h+=`<span class="lbl" id="mood-l">¿Cómo te sentiste hoy?</span><div class="chips" role="group" aria-labelledby="mood-l">${MOODS.map(m=>`<button class="chip" data-mood="${m}" aria-pressed="${x.mood===m}">${m}</button>`).join('')}</div>`;
+   h+=`<span class="lbl" id="cum-l">¿Se cumplió lo que esperabas?</span><div class="chips" role="group" aria-labelledby="cum-l">${CUMPLIO.map(m=>`<button class="chip" data-cum="${m}" aria-pressed="${x.cumplio===m}">${m}</button>`).join('')}</div>`;
+   h+=`<label class="lbl" for="note">Lo que descubrí hoy</label><textarea id="note" placeholder="Escribe aquí tu respuesta al reto…">${esc(drafts[d.k]??x.note??'')}</textarea><div class="row"><button class="btn ghost" data-act="save">Guardar</button><span class="saved" id="saved"></span></div>`}
+  h+=`<span class="lbl">Fotos del día</span><div class="row"><label class="btn ghost" for="file">Agregar fotos</label><input class="sr" type="file" id="file" accept="image/*" multiple><span class="saved" id="up"></span></div>`;
+  const ph=x.photos||[];
+  if(ph.length)h+=`<div class="photos">${ph.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Foto del día" loading="lazy">`).join('')}</div>`;
+  if(!ro){h+=`<div class="row" style="margin-top:22px"><button class="btn" data-act="done" ${x.pass?'disabled':''}>${x.done?'Reto cumplido ✓':'Marcar reto cumplido'}</button>`;
+   if(!x.done)h+=`<button class="btn ghost" data-act="pass" ${(!x.pass&&passesUsed()>=PASSES)?'disabled':''}>${x.pass?'Quitar pase libre':'Usar pase libre'}</button>`;
+   h+=`</div>`}
+  if(d.k==='d06'&&(d.unlocked||ro))h+=extrasHtml(ro)}
+ s.innerHTML=h}
+
+function render(){if(!S)return;renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
+function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
+function closeSheet(){openKey=null;$('overlay').hidden=true}
+
+async function compress(file){try{const bmp=await createImageBitmap(file);const sc=Math.min(1,1600/Math.max(bmp.width,bmp.height));
+ const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+ return await new Promise(r=>c.toBlob(b=>r(b||file),'image/jpeg',.82))}catch(_){return file}}
+
+document.addEventListener('click',async e=>{
+ const o=e.target.closest('[data-open]');if(o){openSheet(o.dataset.open);return}
+ if(e.target.closest('[data-close]')||e.target.id==='overlay'){closeSheet();return}
+ const nb=e.target.closest('[data-nota]');if(nb){const k=nb.dataset.nota;const ok=await post('/api/luis',{tipo:'nota',k,carta:$('nc-'+k).value,pista:$('np-'+k).value});if(ok){delete notaDrafts[k];setBanner('Nota guardada.');render()}return}
+ const a0=e.target.closest('[data-act]');if(a0&&a0.dataset.act==='resumen'){const ok=await post('/api/luis',{tipo:'resumen',text:$('resumen').value});if(ok)setBanner('Carta guardada.');return}
+ if(!openKey)return;const k=openKey,x=data(k);
+ const m=e.target.closest('[data-mood]');if(m){post('/api/dia/'+k,{mood:x.mood===m.dataset.mood?null:m.dataset.mood});return}
+ const cu=e.target.closest('[data-cum]');if(cu){post('/api/dia/'+k,{cumplio:x.cumplio===cu.dataset.cum?null:cu.dataset.cum});return}
+ const a=e.target.closest('[data-act]');if(!a)return;
+ if(a.dataset.act==='open'){const env=$('env');env&&env.classList.add('open');setTimeout(()=>post('/api/dia/'+k,{opened:true}),matchMedia('(prefers-reduced-motion:reduce)').matches?0:1100)}
+ if(a.dataset.act==='save'){const ok=await post('/api/dia/'+k,{note:$('note').value,expectativa:$('exp').value});if(ok){delete drafts[k];delete expDrafts[k];render();const s=$('saved');s&&(s.textContent='Guardado')}}
+ if(a.dataset.act==='done')post('/api/dia/'+k,{done:!x.done});
+ if(a.dataset.act==='pass')post('/api/dia/'+k,{pass:!x.pass});
+ if(a.dataset.act==='seal'){const t=$('cap').value;if(!t.trim())return;if(await post('/api/capsula',{text:t}))capDraft=''}
+ if(a.dataset.act==='copy'){const t=weekText();try{await navigator.clipboard.writeText(t);$('copied').textContent='Copiado. Pégaselo a Luis.'}catch(_){const b=$('weekbox');b.hidden=false;b.value=t;b.select();$('copied').textContent='Selecciona el texto y cópialo.'}}
+});
+document.addEventListener('input',e=>{const id=e.target.id;
+ if(id==='cap'){capDraft=e.target.value;return}
+ if(id.startsWith('nc-')||id.startsWith('np-')){const k=id.slice(3);notaDrafts[k]={carta:$('nc-'+k).value,pista:$('np-'+k).value};return}
+ if(!openKey)return;
+ if(id==='note'||id==='exp'){(id==='note'?drafts:expDrafts)[openKey]=e.target.value;const s=$('saved');s&&(s.textContent='Sin guardar')}});
+document.addEventListener('change',async e=>{if(e.target.id!=='file'||!openKey)return;const k=openKey;const files=[...e.target.files];if(!files.length)return;
+ const up=()=>$('up');let ok=0;
+ for(let i=0;i<files.length;i++){up()&&(up().textContent=`Subiendo ${i+1} de ${files.length}…`);
+  try{const blob=await compress(files[i]);S=await api('/api/foto?dia='+k,{method:'POST',headers:{'content-type':blob.type||'image/jpeg'},body:blob});ok++}
+  catch(err){if(err.message==='auth')return;setBanner(ERR[err.message]||'Una foto no se pudo subir.')}}
+ render();up()&&(up().textContent=ok?`${ok} ${ok===1?'foto guardada':'fotos guardadas'}`:'')});
+$('overlay').addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+
+load();
+}
+</script>
+</body>
+</html>
