@@ -185,7 +185,7 @@ select.inp{appearance:auto}
 <figure><img src="/avatares/friends.jpg" alt="Nori sonriendo en un sillón naranjo de café" loading="lazy"><figcaption>2 · Café</figcaption></figure>
 <figure><img src="/avatares/hogwarts.jpg" alt="Nori con varita en un gran comedor con velas" loading="lazy"><figcaption>3 · Magia</figcaption></figure>
 </div>
-<p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="logout">Salir</button></p>
+<p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="como">Cómo funciona</button> · <button class="link" id="logout">Salir</button></p>
 </div>
 </main>
 
@@ -219,7 +219,8 @@ async function api(path,opts={}){
  if(!r.ok)throw new Error(j.error||'red');
  return j}
 async function load(){try{S=await api('/api/estado');showApp();
- if(S.today==='2026-12-01'&&!isLuis()&&lsGet('nori_party')!=='1'){lsSet('nori_party','1');confetti()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
+ if(S.today==='2026-12-01'&&!isLuis()&&lsGet('nori_party')!=='1'){lsSet('nori_party','1');confetti()}
+ else if(!isLuis()&&lsGet('nori_hola')!=='1'){lsSet('nori_hola','1');bienvenida()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
 async function post(path,body){if(busy)return;busy=true;
  try{S=await api(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});setBanner('');render();return true}
  catch(e){if(e.message!=='auth')setBanner(ERR[e.message]||'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');return false}
@@ -232,6 +233,7 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginEr
  try{const r=await fetch('/api/login',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({clave:$('clave').value})});
   if(!r.ok){$('loginErr').textContent='Esa clave no es. Inténtalo de nuevo.';return}
   $('clave').value='';await load()}catch(_){$('loginErr').textContent='No hay conexión.'}});
+$('como').addEventListener('click',()=>bienvenida());
 $('logout').addEventListener('click',async()=>{try{await fetch('/api/login',{method:'DELETE',credentials:'same-origin'})}catch(_){}S=null;showLogin()});
 
 function status(d){const x=data(d.k);
@@ -370,6 +372,15 @@ function allMedia(){const out=[];
  (S.desafios||[]).forEach(x=>(x.fotos||[]).forEach(id=>out.push({id,tipo:'img',de:'Desafío de '+x.nombre})));
  (S.amigos||[]).forEach(a=>(a.media||[]).forEach(m=>out.push({id:m.id,tipo:m.tipo,de:a.nombre})));
  return out}
+
+function bienvenida(){openKey=null;
+ $('sheet').innerHTML=`<div class="top"><span>Noripalooza · 27 nov — 6 dic</span><button class="close" data-close aria-label="Cerrar">×</button></div>
+ <h2 id="sheet-title">Bienvenida al Festival de Creer y Crear</h2>
+ <p class="reto">Durante diez días todo gira en torno a ti: tu creatividad, tu brillo y la gente que te quiere. Cada día se abre un sobre con un pequeño reto. No hay forma correcta de hacerlo; solo hay que jugar.</p>
+ <div class="rank"><div><span><b>1.</b> Abre tu sobre cada día.</span></div><div><span><b>2.</b> Lleva una libreta o escribe aquí lo que descubras.</span></div><div><span><b>3.</b> Tienes 2 pases libres para saltarte un reto.</span></div><div><span><b>4.</b> Prohibido exigirte perfección.</span></div></div>
+ <p class="carta" style="margin-top:16px"><b>Con amor, Luis</b></p>
+ <div class="row"><button class="btn" data-close>Empezar</button></div>`;
+ $('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
 
 function render(){if(!S)return;renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
