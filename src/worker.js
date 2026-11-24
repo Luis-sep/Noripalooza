@@ -9,7 +9,7 @@ import * as fotoGet from '../functions/api/foto/[id].js';
 import * as capsula from '../functions/api/capsula.js';
 import * as luis from '../functions/api/luis.js';
 import * as amigos from '../functions/api/amigos.js';
-import { json } from '../lib/util.js';
+import { json, getCookie, roleFor } from '../lib/util.js';
 
 const routes = [
   ['/api/login', login],
@@ -28,6 +28,14 @@ const handlerFor = (mod, method) =>
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    // Las fotos de Nori solo se ven con sesión iniciada.
+    if (url.pathname.startsWith('/avatares/')) {
+      if (!roleFor(getCookie(request, 'nori_auth'), env)) return new Response('No autorizado', { status: 401 });
+      const res = await env.ASSETS.fetch(request);
+      const out = new Response(res.body, res);
+      out.headers.set('cache-control', 'private, max-age=86400');
+      return out;
+    }
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
 
     for (const [pat, mod, keys] of routes) {

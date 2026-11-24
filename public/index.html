@@ -111,11 +111,28 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .amigo p{margin:0;white-space:pre-wrap}
 .amigo img{display:block;width:100%;max-height:340px;object-fit:cover;border-radius:12px;margin-top:10px}
 .amigo.off{opacity:.55}
-.hero .ava{float:right;width:min(34%,150px);margin:0 0 8px 12px;border-radius:18px;background:var(--on)}
+.hero .ava{float:right;width:min(38%,170px);aspect-ratio:1;object-fit:cover;margin:0 0 8px 12px;border-radius:18px;border:3px solid var(--on)}
 .versiones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .versiones figure{margin:0;text-align:center}
-.versiones img{width:100%;border-radius:14px;display:block}
+.versiones img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:14px;display:block}
 .versiones figcaption{font-size:14px;font-weight:700;margin-top:6px;color:var(--forest)}
+.msg{margin-top:16px;background:var(--card);border:2px solid var(--terra);border-radius:18px;padding:16px}
+.msg .t{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:700;color:var(--terra)}
+.msg p{margin:8px 0 0;font-size:18px;white-space:pre-wrap}
+.msg small{color:var(--muted)}
+.msg .old{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
+.new{background:var(--gold);color:#1B1B1B;font-size:12px;padding:2px 8px;border-radius:999px}
+.secret{margin-top:16px;border-radius:18px;padding:18px;background:var(--terra);color:#FFF8EE;text-align:center}
+.secret h3{font-family:Bungee,sans-serif;font-weight:400;font-size:24px;margin:0 0 6px}
+.secret.locked{background:var(--card);color:var(--ink);border:2px dashed var(--terra)}
+.secret .bar{height:12px;border-radius:999px;background:var(--line);overflow:hidden;margin:12px auto 0;max-width:320px}
+.secret .bar span{display:block;height:100%;background:var(--gold)}
+.secret .body{white-space:pre-wrap;text-align:left;background:#FFF8EE;color:#1B1B1B;border-radius:14px;padding:14px;margin-top:12px;font-size:17px}
+.party{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:rgba(20,32,26,.82);cursor:pointer}
+.party[hidden]{display:none}
+.party canvas{position:absolute;inset:0;width:100%;height:100%}
+.party h2{position:relative;font-family:Bungee,sans-serif;font-weight:400;color:#FFF8EE;font-size:clamp(40px,11vw,88px);line-height:1;text-align:center;margin:0;padding:0 16px;text-wrap:balance}
+.party p{position:relative;color:#FFF8EE;text-align:center;margin:12px 0 0;font-weight:700}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -139,20 +156,23 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <div id="app" hidden>
 <section id="panel"></section>
 <section class="hero" id="hero" aria-live="polite"></section>
+<section id="msgs"></section>
 <h3 class="sec">Line-up</h3>
 <div class="list" id="list"></div>
+<section id="secreto"></section>
 <h3 class="sec">Álbum del festival</h3>
 <div id="album"></div>
 <h3 class="sec">Tus versiones del festival</h3>
 <div class="versiones">
-<figure><img src="/avatares/bruja.svg" alt="Nori como bruja del bosque" loading="lazy"><figcaption>Bruja del bosque</figcaption></figure>
-<figure><img src="/avatares/noventera.svg" alt="Nori noventera con un tazón de café" loading="lazy"><figcaption>Noventera</figcaption></figure>
-<figure><img src="/avatares/anime.svg" alt="Nori en versión anime" loading="lazy"><figcaption>Anime</figcaption></figure>
+<figure><img src="/avatares/hogwarts.jpg" alt="Nori con varita en un gran comedor con velas" loading="lazy"><figcaption>Magia</figcaption></figure>
+<figure><img src="/avatares/friends.jpg" alt="Nori sonriendo en un sillón naranjo de café" loading="lazy"><figcaption>Café</figcaption></figure>
+<figure><img src="/avatares/anime.jpg" alt="Nori en versión anime" loading="lazy"><figcaption>Anime</figcaption></figure>
 </div>
 <p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="logout">Salir</button></p>
 </div>
 </main>
 
+<div class="party" id="party" hidden role="dialog" aria-label="Feliz cumpleaños"><canvas id="confetti" aria-hidden="true"></canvas><div><h2>¡Feliz cumpleaños, Nori!</h2><p>Toca para entrar a tu día</p></div></div>
 <div class="overlay" id="overlay" hidden>
 <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet"></div>
 </div>
@@ -162,7 +182,9 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 const MOODS=['Radiante','Inspirada','Tranquila','Cansada','Removida'];
 const CUMPLIO=['Sí','Más de lo esperado','No tanto','Fue distinto'];
 const PASSES=2;
-let S=null,openKey=null,busy=false,capDraft='';
+let S=null,openKey=null,busy=false,capDraft='',showOld=false,secretOpen=false;
+const fmt=at=>{try{return new Date(at).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Santiago'})}catch(_){return''}};
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(_){return null}};const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}};
 const drafts={},expDrafts={},notaDrafts={};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -179,7 +201,8 @@ async function api(path,opts={}){
  const j=await r.json().catch(()=>({}));
  if(!r.ok)throw new Error(j.error||'red');
  return j}
-async function load(){try{S=await api('/api/estado');showApp()}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
+async function load(){try{S=await api('/api/estado');showApp();
+ if(S.today==='2026-12-01'&&!isLuis()&&lsGet('nori_party')!=='1'){lsSet('nori_party','1');confetti()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
 async function post(path,body){if(busy)return;busy=true;
  try{S=await api(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});setBanner('');render();return true}
  catch(e){if(e.message!=='auth')setBanner(ERR[e.message]||'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');return false}
@@ -198,8 +221,8 @@ function status(d){const x=data(d.k);
  if(x.pass)return['Pase libre','ok'];if(x.done)return['Cumplido','ok'];
  if(!d.unlocked)return['Se abre el '+d.n,''];if(x.opened)return['Abierto',''];return['¡Sobre listo!','ready']}
 
-const AVA={bruja:['Bruja del bosque','/avatares/bruja.svg'],noventera:['Nori noventera','/avatares/noventera.svg'],anime:['Nori anime','/avatares/anime.svg']};
-function avatarFor(t){if(t>='2026-11-27'&&t<='2026-11-30')return'bruja';if(t>='2026-12-02'&&t<='2026-12-06')return'noventera';return'anime'}
+const AVA={hogwarts:['Nori en el Gran Comedor','/avatares/hogwarts.jpg'],friends:['Nori en el café','/avatares/friends.jpg'],anime:['Nori anime','/avatares/anime.jpg']};
+function avatarFor(t){if(t>='2026-11-27'&&t<='2026-11-30')return'hogwarts';if(t>='2026-12-02'&&t<='2026-12-06')return'friends';return'anime'}
 function renderHero(){const h=$('hero');const first=S.days[0].date,last=S.days[S.days.length-1].date,t=S.today;
  const stamps=S.days.map(d=>{const x=data(d.k);return`<span class="stamp ${x.done||x.pass?'ok':x.opened?'op':''}" title="${esc(d.t)}"></span>`}).join('');
  const doneN=S.days.filter(d=>data(d.k).done||data(d.k).pass).length;let body;
@@ -221,6 +244,8 @@ function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
  const notas=S.days.map(d=>`<div class="nedit"><b>${d.dow} ${d.n} · ${esc(d.t)}</b><label class="lbl" for="nc-${d.k}" style="margin:0 0 4px">Tu nota</label><textarea id="nc-${d.k}">${esc(notaDrafts[d.k]?.carta??d.carta??'')}</textarea><label class="lbl" for="np-${d.k}" style="margin:8px 0 4px">Pista del regalo (opcional)</label><input class="inp" id="np-${d.k}" value="${esc(notaDrafts[d.k]?.pista??d.pista??'')}"><div class="row"><button class="btn ghost" data-nota="${d.k}">Guardar nota</button></div></div>`).join('');
  el.innerHTML=`<h3 class="sec" style="margin-top:20px">Panel de Luis</h3><p class="saved">Ves cómo va Nori sin leer lo que escribe: eso queda para ella. Puedes abrir cualquier sobre para revisarlo.</p>
  <div class="scroll"><table class="ptable"><thead><tr><th>Día</th><th>Sobre</th><th>Abierto</th><th>Reto</th><th>Ánimo</th><th>¿Se cumplió?</th><th>Fotos</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <section class="extra"><h3>Mensajes para Nori</h3><p class="saved">Lo que escribas aquí le aparece arriba en la app, como "Un mensaje de Luis".</p><textarea id="nuevoMsg" placeholder="Pensando en ti…"></textarea><div class="row"><button class="btn" data-act="enviarMsg">Enviar mensaje</button></div>${(S.mensajes||[]).map(m=>`<div class="nedit"><small class="saved">${fmt(m.at)}</small><p style="margin:4px 0 0;white-space:pre-wrap">${esc(m.text)}</p><div class="row"><button class="btn ghost" data-borrar="${esc(m.id)}">Borrar</button></div></div>`).join('')}</section>
+  <section class="extra"><h3>Sobre secreto</h3><p class="saved">Se abre cuando Nori complete los 10 retos (lleva ${S.completados||0} de 10). Pon aquí la pista o la sorpresa final.</p><textarea id="secretoTxt">${esc(S.secreto.text||'')}</textarea><div class="row"><button class="btn" data-act="guardarSecreto">Guardar sobre secreto</button><button class="btn ghost" data-act="verConfeti">Ver el confeti del 1 de diciembre</button></div></section>
   <section class="extra"><h3>Mensajes de amigos (${(S.amigos||[]).length})</h3><p class="saved">Comparte este enlace por WhatsApp. Los amigos solo pueden escribir; Nori los ve todos juntos el 1 de diciembre. Puedes ocultar cualquiera antes.</p><div class="row"><input class="inp" id="amigosLink" readonly value="${esc(location.origin+'/amigos')}" style="flex:1"><button class="btn ghost" data-act="copyAmigos">Copiar enlace</button></div>${amigosHtml(S.amigos||[],true)}</section>
  <section class="extra"><h3>Tus notas</h3>${notas}</section>
  <section class="extra"><h3>Carta del festival</h3><p class="saved">El domingo 6 Nori puede copiar su semana y mandártela. Pégala en el chat con Claude, pídele la carta y pégala aquí: le aparece en su último sobre.</p><textarea id="resumen">${esc(S.resumen)}</textarea><div class="row"><button class="btn" data-act="resumen">Guardar carta</button></div>
@@ -271,7 +296,30 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
   if(d.k==='d06'&&(d.unlocked||ro))h+=extrasHtml(ro)}
  s.innerHTML=h}
 
-function render(){if(!S)return;renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
+function renderMsgs(){const el=$('msgs');const ms=S.mensajes||[];if(isLuis()||!ms.length){el.innerHTML='';return}
+ const seen=lsGet('nori_msg_seen')||'';const last=ms[0];const isNew=last.at>seen;
+ let h=`<div class="msg"><div class="t"><span>Un mensaje de Luis</span>${isNew?'<span class="new">Nuevo</span>':''}</div><p>${esc(last.text)}</p><small>${fmt(last.at)}</small>`;
+ if(ms.length>1){h+=`<div class="row"><button class="link" data-act="old">${showOld?'Ocultar anteriores':'Ver mensajes anteriores ('+(ms.length-1)+')'}</button></div>`;
+  if(showOld)h+=ms.slice(1).map(m=>`<div class="old"><p>${esc(m.text)}</p><small>${fmt(m.at)}</small></div>`).join('')}
+ el.innerHTML=h+'</div>';
+ if(isNew)setTimeout(()=>lsSet('nori_msg_seen',last.at),4000)}
+
+function renderSecreto(){const el=$('secreto');if(isLuis()){el.innerHTML='';return}
+ const n=S.completados||0;
+ if(!S.secreto.abierto){el.innerHTML=`<div class="secret locked"><h3>Sobre secreto</h3><p>Completa los 10 retos para abrirlo. Los pases libres también cuentan.</p><div class="bar" aria-label="${n} de 10"><span style="width:${n*10}%"></span></div><p class="saved" style="margin-top:6px">${n} de 10</p></div>`;return}
+ if(!secretOpen){el.innerHTML=`<div class="secret"><h3>¡Lo lograste!</h3><p>Completaste tu Noripalooza. Tu sobre secreto está listo.</p><div class="row" style="justify-content:center"><button class="btn light" data-act="secreto">Abrir sobre secreto</button></div></div>`;return}
+ el.innerHTML=`<div class="secret"><h3>Sobre secreto</h3><div class="body">${esc(S.secreto.text||'Luis tiene una sorpresa para ti. ¡Búscalo!')}</div></div>`}
+
+function confetti(){const party=$('party');party.hidden=false;
+ if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+ const c=$('confetti'),x=c.getContext('2d');const W=c.width=innerWidth,H=c.height=innerHeight;
+ const cols=['#E2A729','#B85A2B','#7C9A4E','#FFF8EE','#E88B7A'];
+ const P=Array.from({length:160},()=>({x:Math.random()*W,y:-Math.random()*H,w:6+Math.random()*6,h:8+Math.random()*8,vy:2+Math.random()*3,vx:-1+Math.random()*2,r:Math.random()*6,vr:-.1+Math.random()*.2,c:cols[Math.floor(Math.random()*cols.length)]}));
+ const t0=performance.now();
+ (function step(t){x.clearRect(0,0,W,H);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(p.y>H){p.y=-10;p.x=Math.random()*W}x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore()});
+  if(t-t0<7000&&!party.hidden)requestAnimationFrame(step);else x.clearRect(0,0,W,H)})(t0)}
+
+function render(){if(!S)return;renderMsgs();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
 function closeSheet(){openKey=null;$('overlay').hidden=true}
 
@@ -283,7 +331,15 @@ document.addEventListener('click',async e=>{
  const o=e.target.closest('[data-open]');if(o){openSheet(o.dataset.open);return}
  if(e.target.closest('[data-close]')||e.target.id==='overlay'){closeSheet();return}
  const nb=e.target.closest('[data-nota]');if(nb){const k=nb.dataset.nota;const ok=await post('/api/luis',{tipo:'nota',k,carta:$('nc-'+k).value,pista:$('np-'+k).value});if(ok){delete notaDrafts[k];setBanner('Nota guardada.');render()}return}
-const oc=e.target.closest('[data-ocultar]');if(oc){post('/api/luis',{tipo:'ocultar',id:oc.dataset.ocultar,oculto:oc.dataset.v==='1'});return}
+if(e.target.closest('#party')){$('party').hidden=true;return}
+ const bo=e.target.closest('[data-borrar]');if(bo){post('/api/luis',{tipo:'borrarMensaje',id:bo.dataset.borrar});return}
+ const g=e.target.closest('[data-act]');
+ if(g&&g.dataset.act==='old'){showOld=!showOld;renderMsgs();return}
+ if(g&&g.dataset.act==='secreto'){secretOpen=true;renderSecreto();return}
+ if(g&&g.dataset.act==='verConfeti'){confetti();return}
+ if(g&&g.dataset.act==='enviarMsg'){const t=$('nuevoMsg').value.trim();if(!t)return;if(await post('/api/luis',{tipo:'mensaje',text:t})){setBanner('Mensaje enviado.')}return}
+ if(g&&g.dataset.act==='guardarSecreto'){if(await post('/api/luis',{tipo:'secreto',text:$('secretoTxt').value}))setBanner('Sobre secreto guardado.');return}
+ const oc=e.target.closest('[data-ocultar]');if(oc){post('/api/luis',{tipo:'ocultar',id:oc.dataset.ocultar,oculto:oc.dataset.v==='1'});return}
  const a1=e.target.closest('[data-act="copyAmigos"]');if(a1){const i=$('amigosLink');try{await navigator.clipboard.writeText(i.value);setBanner('Enlace copiado.')}catch(_){i.select();setBanner('Selecciona el enlace y cópialo.')}return}
  const a0=e.target.closest('[data-act]');if(a0&&a0.dataset.act==='resumen'){const ok=await post('/api/luis',{tipo:'resumen',text:$('resumen').value});if(ok)setBanner('Carta guardada.');return}
  if(!openKey)return;const k=openKey,x=data(k);
