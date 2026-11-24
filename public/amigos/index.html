@@ -105,6 +105,9 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .secret{background:var(--forest);color:var(--on);border-radius:14px;padding:12px 14px;margin:14px 0 4px;font-weight:500}
 .thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
 .thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.badge{width:84px;height:84px;margin:0 auto 6px;border-radius:50%;background:var(--card);border:3px solid var(--gold);display:grid;place-items:center}
+.aprende{background:var(--bg);border-radius:14px;padding:12px 14px;margin-top:12px}
+.aprende p{margin:4px 0}
 .opts{display:grid;gap:10px;margin-top:10px}
 .opt{font:inherit;font-size:17px;text-align:left;min-height:52px;padding:12px 16px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
 .opt:hover,.opt:focus-visible{border-color:var(--terra);outline:none}
@@ -151,8 +154,11 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <div class="opts" id="qOpts"></div>
 </section>
 <section class="card" id="quizFin" hidden>
-<h2>¡Listo!</h2>
-<p>Tus respuestas quedaron guardadas. El 1 de diciembre sabremos si eres alma gemela certificada o conocido de WhatsApp.</p>
+<div class="badge" aria-hidden="true"><svg viewBox="0 0 64 64" width="54" height="54"><path d="M32 4 L38 24 L58 26 L42 38 L48 58 L32 46 L16 58 L22 38 L6 26 L26 24 Z" fill="#E2A729"/></svg></div>
+<p class="saved" style="text-align:center">Tu logro</p>
+<h2 id="logro" style="text-align:center;margin-top:0"></h2>
+<p id="logroTxt" style="text-align:center"></p>
+<div id="aprende"></div>
 <div class="row"><button class="btn ghost" id="otro2">Escribir otro mensaje</button></div>
 </section>
 <p class="foot">Una sorpresa de Luis para Nori.</p>
@@ -173,6 +179,12 @@ function showQ(){const it=QUIZ[qi];$('qNum').textContent=`Pregunta ${qi+1} de ${
 async function pick(i){resp.push(i);qi++;if(qi<QUIZ.length){showQ();return}
  $('qOpts').innerHTML='<p class="saved">Guardando…</p>';
  try{const r=await fetch('/api/amigos/quiz',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:sent.id,token:sent.token,respuestas:resp})});if(!r.ok)throw 0;
+  const res=await r.json();const n=res.puntaje;
+  $('logro').textContent=res.titulo;
+  $('logroTxt').textContent=n>=4?`¡${n} de 5! Conoces a Nori de memoria.`:n>=2?`${n} de 5. ¡Nada mal! Y ahora la conoces un poquito más.`:`${n} de 5. ¡No importa! Lo que más le va a gustar a Nori es tu mensaje, y ese ya lo mandaste.`;
+  const fall=res.correctas.filter(c=>!c.bien);const box=$('aprende');box.innerHTML='';
+  if(fall.length){const d=document.createElement('div');d.className='aprende';const h=document.createElement('p');h.innerHTML='<b>Datos de Nori que ahora sabes:</b>';d.appendChild(h);
+   fall.forEach(c=>{const p=document.createElement('p');p.textContent='• '+c.r;d.appendChild(p)});box.appendChild(d)}
   $('quizCard').hidden=true;$('quizFin').hidden=false}catch(_){$('qOpts').innerHTML='<p class="err">No se pudieron guardar tus respuestas. Revisa tu conexión.</p>'}}
 
 async function compress(file){const bmp=await createImageBitmap(file);const sc=Math.min(1,1600/Math.max(bmp.width,bmp.height));

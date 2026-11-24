@@ -1,5 +1,5 @@
 import { json } from '../../../lib/util.js';
-import { QUIZ } from '../../../lib/data.js';
+import { QUIZ, QUIZ_CLAVE, TITULOS } from '../../../lib/data.js';
 
 const VENTANA = 2 * 60 * 60 * 1000;
 
@@ -14,5 +14,8 @@ export async function onRequestPost({ request, env }) {
   if (!Array.isArray(r) || r.length !== QUIZ.length || !r.every((x, i) => Number.isInteger(x) && x >= 0 && x < QUIZ[i].o.length)) return json({ error: 'respuestas' }, 400);
   msg.quiz = r;
   await env.NORI_KV.put(key, JSON.stringify(msg));
-  return json({ ok: true });
+  const stored = await env.NORI_KV.get('quiz', 'json');
+  const clave = Array.isArray(stored?.clave) ? stored.clave : QUIZ_CLAVE;
+  const puntaje = r.filter((x, i) => x === clave[i]).length;
+  return json({ ok: true, puntaje, titulo: TITULOS[puntaje], correctas: QUIZ.map((q, i) => ({ q: q.q, r: q.o[clave[i]], bien: r[i] === clave[i] })) });
 }
