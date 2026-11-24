@@ -1,6 +1,10 @@
 name = "noripalooza"
+main = "src/worker.js"
 compatibility_date = "2026-11-01"
-pages_build_output_dir = "public"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "NORI_KV"
