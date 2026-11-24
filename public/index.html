@@ -365,14 +365,14 @@ function confetti(){const party=$('party');party.hidden=false;
  (function step(t){x.clearRect(0,0,W,H);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(p.y>H){p.y=-10;p.x=Math.random()*W}x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore()});
   if(t-t0<7000&&!party.hidden)requestAnimationFrame(step);else x.clearRect(0,0,W,H)})(t0)}
 
-function desafiosHtml(list,luis){return list.map(d=>`<div class="des ${d.hecho?'ok':''} ${d.oculto?'off':''}"><b>${esc(d.nombre)} te desafía:</b><p>${esc(d.texto)}</p>${(d.fotos||[]).length?`<div class="photos">${d.fotos.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Prueba del desafío" loading="lazy">`).join('')}</div>`:''}${luis?(d.hecho?'<p class="saved">Nori lo cumplió.</p>':''):`<div class="row"><button class="btn ${d.hecho?'ghost':''}" data-des="${esc(d.id)}" data-v="${d.hecho?'0':'1'}">${d.hecho?'Hecho ✓ (deshacer)':'¡Hecho!'}</button><label class="btn ghost" for="df-${esc(d.id)}">Subir prueba</label><input class="sr" type="file" accept="image/*" id="df-${esc(d.id)}" data-desfoto="${esc(d.id)}"></div>`}</div>`).join('')}
+function desafiosHtml(list,luis){return list.map(d=>`<div class="des ${d.hecho?'ok':''} ${d.oculto?'off':''}"><b>${d.nombre?esc(d.nombre)+' te desafía:':'Alguien te desafía:'}</b><p>${esc(d.texto)}</p>${(d.fotos||[]).length?`<div class="photos">${d.fotos.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Prueba del desafío" loading="lazy">`).join('')}</div>`:''}${luis?(d.hecho?'<p class="saved">Nori lo cumplió.</p>':''):`<div class="row"><button class="btn ${d.hecho?'ghost':''}" data-des="${esc(d.id)}" data-v="${d.hecho?'0':'1'}">${d.hecho?'Hecho ✓ (deshacer)':'¡Hecho!'}</button><label class="btn ghost" for="df-${esc(d.id)}">Subir prueba</label><input class="sr" type="file" accept="image/*" id="df-${esc(d.id)}" data-desfoto="${esc(d.id)}"></div>`}</div>`).join('')}
 function renderDesafios(){const el=$('desafios');if(isLuis()){el.innerHTML='';return}const l=S.desafios||[];if(!l.length){el.innerHTML='';return}
  const n=l.filter(d=>d.hecho).length;
- el.innerHTML=`<h3 class="sec">Desafíos de tus amigos</h3><p class="saved">Cúmplelos cuando quieras durante el festival. Cada uno cumplido es una insignia.</p>${n?`<div class="insignias" aria-label="${n} insignias">${'<span>★</span>'.repeat(n)}</div>`:''}${desafiosHtml(l,false)}`}
+ el.innerHTML=`<h3 class="sec">Desafíos de tus amigos</h3><p class="saved">Cúmplelos cuando quieras durante el festival. Cada uno cumplido es una insignia.${S.today<'2026-12-01'?' ¿Quién te desafió? Lo sabrás el 1 de diciembre.':''}</p>${n?`<div class="insignias" aria-label="${n} insignias">${'<span>★</span>'.repeat(n)}</div>`:''}${desafiosHtml(l,false)}`}
 
 function allMedia(){const out=[];
  S.days.forEach(d=>(data(d.k).photos||[]).forEach(id=>out.push({id,tipo:'img',de:'Nori · '+d.dow+' '+d.n})));
- (S.desafios||[]).forEach(x=>(x.fotos||[]).forEach(id=>out.push({id,tipo:'img',de:'Desafío de '+x.nombre})));
+ (S.desafios||[]).forEach(x=>(x.fotos||[]).forEach(id=>out.push({id,tipo:'img',de:'Desafío de '+(x.nombre||'un amigo')})));
  (S.amigos||[]).forEach(a=>(a.media||[]).forEach(m=>out.push({id:m.id,tipo:m.tipo,de:a.nombre})));
  return out}
 
