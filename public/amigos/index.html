@@ -135,6 +135,8 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <label class="lbl" for="desafio">Desafía a Nori con algo (opcional)</label>
 <p class="saved" style="margin:0 0 6px">Algo divertido o creativo que pueda hacer durante su festival. Lo verá desde el 27 y te mostrará la prueba.</p>
 <input class="inp" id="desafio" maxlength="500" placeholder="Dibuja a Lucas con los ojos cerrados">
+<p class="saved" style="margin:8px 0 4px">Ideas (toca una para usarla o escribe la tuya):</p>
+<div class="chips" id="ejemplos"><button type="button" class="chip" data-ej="Anda a tomar un café a un lugar nuevo">Anda a tomar un café a un lugar nuevo</button><button type="button" class="chip" data-ej="Dibuja a Lucas con los ojos cerrados">Dibuja a Lucas con los ojos cerrados</button><button type="button" class="chip" data-ej="Prueba un postre que nunca hayas comido">Prueba un postre que nunca hayas comido</button><button type="button" class="chip" data-ej="Cántame una canción por audio">Cántame una canción por audio</button><button type="button" class="chip" data-ej="Baila una canción completa en el living">Baila una canción completa en el living</button><button type="button" class="chip" data-ej="Cocina algo inventado y ponle nombre">Cocina algo inventado y ponle nombre</button><button type="button" class="chip" data-ej="Escribe un poema de 4 líneas sobre tu semana">Escribe un poema de 4 líneas sobre tu semana</button><button type="button" class="chip" data-ej="Sal a caminar 20 minutos sin rumbo">Sal a caminar 20 minutos sin rumbo</button><button type="button" class="chip" data-ej="Sácate una foto con tu mejor pose de bruja">Sácate una foto con tu mejor pose de bruja</button><button type="button" class="chip" data-ej="Hazle un cumplido a un desconocido">Hazle un cumplido a un desconocido</button></div>
 <span class="lbl">Fotos con ella (opcional, hasta 3)</span>
 <div class="row"><label class="btn ghost" for="fotos">Elegir fotos</label><input class="sr" type="file" id="fotos" accept="image/*" multiple><button class="link" type="button" id="quitarFotos" hidden>Quitar fotos</button></div>
 <div class="thumbs" id="thumbs"></div>
@@ -171,6 +173,7 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 {
 const $=id=>document.getElementById(id);
 const MAXV=24*1024*1024;
+document.getElementById('ejemplos').addEventListener('click',e=>{const b=e.target.closest('[data-ej]');if(!b)return;const i=document.getElementById('desafio');i.value=b.dataset.ej;i.focus()});
 let fotos=[],video=null,sent=null,qi=0,resp=[];
 const QUIZ=[
  {q:"Nori llega sola a una ciudad nueva. ¿Qué pasa en los primeros 10 minutos?",o:["Encuentra todo a la primera", "Se pierde. Obvio.", "Pregunta y llega perfecto", "Sigue el GPS al pie de la letra"]},
