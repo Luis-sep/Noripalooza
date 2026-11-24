@@ -112,7 +112,10 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .amigo img,.amigo video{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:12px;margin-top:10px;background:#000}
 .amigo video{object-fit:contain}
 .amigo.off{opacity:.55}
-.hero .ava{float:right;width:min(38%,170px);aspect-ratio:1;object-fit:cover;margin:0 0 8px 12px;border-radius:18px;border:3px solid var(--on)}
+.hero .avabox{position:relative;margin:-22px -22px 18px;border-radius:22px 22px 0 0;overflow:hidden}
+.hero .ava{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;object-position:center 25%}
+.hero .avatag{position:absolute;left:12px;bottom:12px;background:var(--on);color:var(--forest);font-weight:700;font-size:14px;padding:6px 12px;border-radius:999px}
+.hero .avanext{position:absolute;right:12px;top:12px;background:rgba(19,32,26,.72);color:#FFF8EE;font-size:13px;padding:6px 12px;border-radius:999px}
 .versiones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .versiones figure{margin:0;text-align:center}
 .versiones img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:14px;display:block}
@@ -148,6 +151,9 @@ select.inp{appearance:auto}
 .insignias{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .insignias span{width:30px;height:30px;border-radius:50%;background:var(--gold);display:grid;place-items:center;color:#1B1B1B;font-weight:700;font-size:15px}
 .frase{font-size:18px;font-style:italic;color:var(--forest);margin:0 0 12px;text-wrap:balance}
+.teaser{margin-top:16px;border-radius:18px;padding:16px 18px;background:var(--gold);color:#1B1B1B;display:flex;gap:14px;align-items:center}
+.teaser b{flex:none;font-family:Bungee,sans-serif;font-weight:400;font-size:34px;line-height:1;min-width:44px;text-align:center}
+.teaser p{margin:0;font-weight:500}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -172,6 +178,7 @@ select.inp{appearance:auto}
 <section id="panel"></section>
 <section class="hero" id="hero" aria-live="polite"></section>
 <section id="msgs"></section>
+<section id="teaser"></section>
 <h3 class="sec">Line-up</h3>
 <div class="list" id="list"></div>
 <section id="desafios"></section>
@@ -180,12 +187,7 @@ select.inp{appearance:auto}
 <iframe class="sp" title="Playlist Nori's beat en Spotify" src="https://open.spotify.com/embed/playlist/4IAOTtk429IzA0MWnLbRtp?utm_source=generator&theme=0" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
 <h3 class="sec">Álbum del festival</h3>
 <div id="album"></div>
-<h3 class="sec">Tus versiones del festival</h3>
-<div class="versiones">
-<figure><img src="/avatares/anime.jpg" alt="Nori en versión anime" loading="lazy"><figcaption>1 · Anime</figcaption></figure>
-<figure><img src="/avatares/friends.jpg" alt="Nori sonriendo en un sillón naranjo de café" loading="lazy"><figcaption>2 · Café</figcaption></figure>
-<figure><img src="/avatares/hogwarts.jpg" alt="Nori con varita en un gran comedor con velas" loading="lazy"><figcaption>3 · Magia</figcaption></figure>
-</div>
+
 <p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="como">Cómo funciona</button> · <button class="link" id="logout">Salir</button></p>
 </div>
 </main>
@@ -241,16 +243,16 @@ function status(d){const x=data(d.k);
  if(x.pass)return['Pase libre','ok'];if(x.done)return['Cumplido','ok'];
  if(!d.unlocked)return['Se abre el '+d.n,''];if(x.opened)return['Abierto',''];return['¡Sobre listo!','ready']}
 
-const AVA={hogwarts:['Nori en el Gran Comedor','/avatares/hogwarts.jpg'],friends:['Nori en el café','/avatares/friends.jpg'],anime:['Nori anime','/avatares/anime.jpg']};
+const AVA={anime:['Nori anime','/avatares/anime.jpg','Versión 1 de 3 · Anime','El 1 de diciembre te transformas'],friends:['Nori en el café','/avatares/friends.jpg','Versión 2 de 3 · Café','El 4 de diciembre, la última transformación'],hogwarts:['Nori en el Gran Comedor','/avatares/hogwarts.jpg','Versión 3 de 3 · Magia','Tu versión final']};
 function avatarFor(t){if(t<='2026-11-30')return'anime';if(t<='2026-12-03')return'friends';return'hogwarts'}
 function renderHero(){const h=$('hero');const first=S.days[0].date,last=S.days[S.days.length-1].date,t=S.today;
  const stamps=S.days.map(d=>{const x=data(d.k);return`<span class="stamp ${x.done||x.pass?'ok':x.opened?'op':''}" title="${esc(d.t)}"></span>`}).join('');
  const doneN=S.days.filter(d=>data(d.k).done||data(d.k).pass).length;let body;
- if(t<first){const n=Math.round((Date.parse(first)-Date.parse(t))/864e5);body=`<p class="k">Tu festival empieza pronto</p><h2>Faltan ${n} ${n===1?'día':'días'}</h2><p>El viernes 27 se abre tu primer sobre.</p>`}
+ if(t<first){const n=Math.round((Date.parse(first)-Date.parse(t))/864e5);body=`<p class="k">Tu festival empieza pronto</p><h2>${n===1?'Falta 1 día':'Faltan '+n+' días'}</h2><p>El viernes 27 se abre tu primer sobre.</p>`}
  else if(t>last){body=`<p class="k">El festival terminó</p><h2>Lo que creaste se queda contigo</h2><p>Revive cada día en el álbum.</p><div class="row"><button class="btn light" data-open="d06">Ver mi cierre</button></div>`}
  else{const d=S.days.find(x=>x.date===t)||S.days[0];const x=data(d.k);
   body=`<p class="k">Hoy · ${d.dow} ${d.n} ${d.m}</p><h2>${esc(d.t)}</h2><p>${esc(d.s)}</p><div class="row"><button class="btn light" data-open="${d.k}">${x.opened||isLuis()?'Ver el sobre de hoy':'Abrir el sobre de hoy'}</button></div>${d.spotify?spEmbed(d.spotify):''}`}
- const av=AVA[avatarFor(t)];h.innerHTML=`<img class="ava" src="${av[1]}" alt="${av[0]}">`+body+`<div class="stamps" aria-label="${doneN} de 10 retos cumplidos">${stamps}</div><p class="k" style="margin-top:8px">${doneN} de 10 retos · ${PASSES-passesUsed()} pases libres</p>`}
+ const av=AVA[avatarFor(t)];h.innerHTML=`<div class="avabox"><img class="ava" src="${av[1]}" alt="${av[0]}"><span class="avatag">${av[2]}</span><span class="avanext">${av[3]}</span></div>`+body+`<div class="stamps" aria-label="${doneN} de 10 retos cumplidos">${stamps}</div><p class="k" style="margin-top:8px">${doneN} de 10 retos · ${PASSES-passesUsed()} pases libres</p>`}
 
 function renderList(){$('list').innerHTML=S.days.map(d=>{const[s,c]=status(d);
  return`<button class="day ${d.date===S.today?'today':''}" data-open="${d.k}"><span class="d"><span>${d.dow}</span><b>${d.n}</b></span><span class="t"><b>${esc(d.t)}</b><span>${esc(d.s)}</span></span><span class="pill ${c}">${s}</span></button>`}).join('')}
@@ -384,7 +386,11 @@ function bienvenida(){openKey=null;
  <div class="row"><button class="btn" data-close>Empezar</button></div>`;
  $('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
 
-function render(){if(!S)return;renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
+function renderTeaser(){const el=$('teaser');const n=S.amigosCount||0;
+ if(isLuis()||!n||S.today<'2026-11-27'||S.today>='2026-12-01'){el.innerHTML='';return}
+ el.innerHTML=`<div class="teaser"><b>${n}</b><p>${n===1?'persona te dejó':'personas te dejaron'} algo para tu cumpleaños. Se abre el 1 de diciembre.</p></div>`}
+
+function render(){if(!S)return;renderMsgs();renderTeaser();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
 function closeSheet(){openKey=null;$('overlay').hidden=true}
 
