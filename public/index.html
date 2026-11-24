@@ -178,7 +178,6 @@ select.inp{appearance:auto}
 <section id="panel"></section>
 <section class="hero" id="hero" aria-live="polite"></section>
 <section id="msgs"></section>
-<section id="teaser"></section>
 <h3 class="sec">Line-up</h3>
 <div class="list" id="list"></div>
 <section id="desafios"></section>
@@ -252,7 +251,7 @@ function renderHero(){const h=$('hero');const first=S.days[0].date,last=S.days[S
  else if(t>last){body=`<p class="k">El festival terminó</p><h2>Lo que creaste se queda contigo</h2><p>Revive cada día en el álbum.</p><div class="row"><button class="btn light" data-open="d06">Ver mi cierre</button></div>`}
  else{const d=S.days.find(x=>x.date===t)||S.days[0];const x=data(d.k);
   body=`<p class="k">Hoy · ${d.dow} ${d.n} ${d.m}</p><h2>${esc(d.t)}</h2><p>${esc(d.s)}</p><div class="row"><button class="btn light" data-open="${d.k}">${x.opened||isLuis()?'Ver el sobre de hoy':'Abrir el sobre de hoy'}</button></div>${d.spotify?spEmbed(d.spotify):''}`}
- const av=AVA[avatarFor(t)];h.innerHTML=`<div class="avabox"><img class="ava" src="${av[1]}" alt="${av[0]}"><span class="avatag">${av[2]}</span><span class="avanext">${av[3]}</span></div>`+body+`<div class="stamps" aria-label="${doneN} de 10 retos cumplidos">${stamps}</div><p class="k" style="margin-top:8px">${doneN} de 10 retos · ${PASSES-passesUsed()} pases libres</p>`}
+ const av=AVA[avatarFor(t)];h.innerHTML=`<div class="avabox"><img class="ava" src="${av[1]}" alt="${av[0]}"><span class="avanext">${av[3]}</span></div>`+body+`<div class="stamps" aria-label="${doneN} de 10 retos cumplidos">${stamps}</div><p class="k" style="margin-top:8px">${doneN} de 10 retos · ${PASSES-passesUsed()} pases libres</p>`}
 
 function renderList(){$('list').innerHTML=S.days.map(d=>{const[s,c]=status(d);
  return`<button class="day ${d.date===S.today?'today':''}" data-open="${d.k}"><span class="d"><span>${d.dow}</span><b>${d.n}</b></span><span class="t"><b>${esc(d.t)}</b><span>${esc(d.s)}</span></span><span class="pill ${c}">${s}</span></button>`}).join('')}
@@ -386,11 +385,7 @@ function bienvenida(){openKey=null;
  <div class="row"><button class="btn" data-close>Empezar</button></div>`;
  $('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
 
-function renderTeaser(){const el=$('teaser');const n=S.amigosCount||0;
- if(isLuis()||!n||S.today<'2026-11-27'||S.today>='2026-12-01'){el.innerHTML='';return}
- el.innerHTML=`<div class="teaser"><b>${n}</b><p>${n===1?'persona te dejó':'personas te dejaron'} algo para tu cumpleaños. Se abre el 1 de diciembre.</p></div>`}
-
-function render(){if(!S)return;renderMsgs();renderTeaser();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
+function render(){if(!S)return;renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
 function closeSheet(){openKey=null;$('overlay').hidden=true}
 
