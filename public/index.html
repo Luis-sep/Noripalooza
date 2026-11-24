@@ -278,7 +278,7 @@ function songHtml(d){if(d.spotify)return`<span class="lbl">Canción del día</sp
 
 function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
 
-function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${a.anecdota?`<p class="anec"><b>Una anécdota:</b> ${esc(a.anecdota)}</p>`:''}${luis&&a.jugo?`<p class="saved">Jugó el quiz${a.puntaje!=null?': '+a.puntaje+' de 5':''}.</p>`:''}${(a.media||[]).map(m=>m.tipo==='video'?`<video controls playsinline preload="metadata" src="/api/foto/${encodeURIComponent(m.id)}"></video>`:`<img src="/api/foto/${encodeURIComponent(m.id)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`).join('')}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button></div>`:''}</div>`).join('')}
+function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${a.anecdota?`<p class="anec"><b>Una anécdota:</b> ${esc(a.anecdota)}</p>`:''}${luis&&a.jugo?`<p class="saved">Jugó el quiz${a.puntaje!=null?': '+a.puntaje+' de 5':''}.</p>`:''}${(a.media||[]).map(m=>m.tipo==='video'?`<video controls playsinline preload="metadata" src="/api/foto/${encodeURIComponent(m.id)}"></video>`:`<img src="/api/foto/${encodeURIComponent(m.id)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`).join('')}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button><button class="btn ghost" data-borraramigo="${esc(a.id)}">Borrar</button></div>`:''}</div>`).join('')}
 
 function rankHtml(full){const T=S.quiz.titulos||[];const l=(S.amigos||[]).filter(a=>a.jugo&&a.puntaje!=null&&!a.oculto).sort((x,y)=>y.puntaje-x.puntaje);
  if(!l.length)return'';
@@ -377,6 +377,8 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  if(g&&g.dataset.act==='guardarQuiz'){const c=S.quiz.preguntas.map((_,i)=>$('qz-'+i).value);if(c.some(v=>v==='')){setBanner('Marca la respuesta correcta de las 5 preguntas.');return}
   if(await post('/api/luis',{tipo:'quiz',clave:c.map(Number),mostrar:$('qzMostrar').checked}))setBanner('Respuestas del quiz guardadas.');return}
  const dz=e.target.closest('[data-des]');if(dz){post('/api/desafio',{id:dz.dataset.des,hecho:dz.dataset.v==='1'});return}
+ const ba=e.target.closest('[data-borraramigo]');if(ba){if(ba.dataset.ok!=='1'){ba.dataset.ok='1';ba.textContent='¿Seguro? Toca de nuevo para borrar';ba.style.color='var(--terra)';return}
+  if(await post('/api/luis',{tipo:'borrarAmigo',id:ba.dataset.borraramigo}))setBanner('Mensaje borrado.');return}
  const oc=e.target.closest('[data-ocultar]');if(oc){post('/api/luis',{tipo:'ocultar',id:oc.dataset.ocultar,oculto:oc.dataset.v==='1'});return}
  const a1=e.target.closest('[data-act="copyAmigos"]');if(a1){const i=$('amigosLink');try{await navigator.clipboard.writeText(i.value);setBanner('Enlace copiado.')}catch(_){i.select();setBanner('Selecciona el enlace y cópialo.')}return}
  const a0=e.target.closest('[data-act]');if(a0&&a0.dataset.act==='resumen'){const ok=await post('/api/luis',{tipo:'resumen',text:$('resumen').value});if(ok)setBanner('Carta guardada.');return}
