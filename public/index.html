@@ -136,6 +136,12 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .party p{position:relative;color:#FFF8EE;text-align:center;margin:12px 0 0;font-weight:700}
 .sp{width:100%;border:0;border-radius:14px;margin:4px 0 6px;display:block}
 .hero .sp{clear:both;margin-top:14px}
+.anec{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:var(--bg);white-space:pre-wrap}
+.rank{display:grid;gap:8px;margin-top:10px}
+.rank div{display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px}
+.rank b{font-size:17px}.rank span{font-size:14px;color:var(--muted)}
+.rank .pts{font-family:Bungee,sans-serif;font-size:20px;color:var(--terra);white-space:nowrap}
+select.inp{appearance:auto}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -192,7 +198,7 @@ const drafts={},expDrafts={},notaDrafts={};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const setBanner=t=>{$('banner').textContent=t};
-const ERR={'cancion':'Ese enlace no es de una canción de Spotify. En Spotify toca Compartir → Copiar enlace de la canción.','sin-pases':'Ya usaste tus 2 pases libres.','bloqueado':'Ese sobre todavía no se abre.','tamano':'La foto es muy grande.','tipo':'Ese archivo no es una foto.','ya-sellada':'La cápsula ya está sellada.','vacia':'Escribe algo antes de sellar.'};
+const ERR={'clave-quiz':'Marca la respuesta correcta de las 5 preguntas.','cancion':'Ese enlace no es de una canción de Spotify. En Spotify toca Compartir → Copiar enlace de la canción.','sin-pases':'Ya usaste tus 2 pases libres.','bloqueado':'Ese sobre todavía no se abre.','tamano':'La foto es muy grande.','tipo':'Ese archivo no es una foto.','ya-sellada':'La cápsula ya está sellada.','vacia':'Escribe algo antes de sellar.'};
 const isLuis=()=>S&&S.role==='luis';
 const data=k=>(S&&S.progreso[k])||{};
 const dayOf=k=>S.days.find(d=>d.k===k);
@@ -249,6 +255,9 @@ function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
  <div class="scroll"><table class="ptable"><thead><tr><th>Día</th><th>Sobre</th><th>Abierto</th><th>Reto</th><th>Ánimo</th><th>¿Se cumplió?</th><th>Fotos</th></tr></thead><tbody>${rows}</tbody></table></div>
   <section class="extra"><h3>Mensajes para Nori</h3><p class="saved">Lo que escribas aquí le aparece arriba en la app, como "Un mensaje de Luis".</p><textarea id="nuevoMsg" placeholder="Pensando en ti…"></textarea><div class="row"><button class="btn" data-act="enviarMsg">Enviar mensaje</button></div>${(S.mensajes||[]).map(m=>`<div class="nedit"><small class="saved">${fmt(m.at)}</small><p style="margin:4px 0 0;white-space:pre-wrap">${esc(m.text)}</p><div class="row"><button class="btn ghost" data-borrar="${esc(m.id)}">Borrar</button></div></div>`).join('')}</section>
   <section class="extra"><h3>Sobre secreto</h3><p class="saved">Se abre cuando Nori complete los 10 retos (lleva ${S.completados||0} de 10). Pon aquí la pista o la sorpresa final.</p><textarea id="secretoTxt">${esc(S.secreto.text||'')}</textarea><div class="row"><button class="btn" data-act="guardarSecreto">Guardar sobre secreto</button><button class="btn ghost" data-act="verConfeti">Ver el confeti del 1 de diciembre</button></div></section>
+  <section class="extra"><h3>Quiz de amigos</h3><p class="saved">Marca la respuesta correcta de cada pregunta; con eso se arma el ranking.</p>${S.quiz.preguntas.map((q,i)=>`<label class="lbl" for="qz-${i}">${i+1}. ${esc(q.q)}</label><select class="inp" id="qz-${i}"><option value="">— Elige la correcta —</option>${q.o.map((o,j)=>`<option value="${j}" ${S.quiz.clave&&S.quiz.clave[i]===j?'selected':''}>${esc(o)}</option>`).join('')}</select>`).join('')}
+  <label class="row" style="margin-top:12px"><input type="checkbox" id="qzMostrar" ${S.quiz.mostrar?'checked':''} style="width:22px;height:22px"> Mostrarle el ranking a Nori el 1 de diciembre</label>
+  <div class="row"><button class="btn" data-act="guardarQuiz">Guardar respuestas del quiz</button></div>${S.quiz.clave?rankHtml()||'<p class="saved">Todavía nadie juega.</p>':''}</section>
   <section class="extra"><h3>Mensajes de amigos (${(S.amigos||[]).length})</h3><p class="saved">Comparte este enlace por WhatsApp. Los amigos solo pueden escribir; Nori los ve todos juntos el 1 de diciembre. Puedes ocultar cualquiera antes.</p><div class="row"><input class="inp" id="amigosLink" readonly value="${esc(location.origin+'/amigos')}" style="flex:1"><button class="btn ghost" data-act="copyAmigos">Copiar enlace</button></div>${amigosHtml(S.amigos||[],true)}</section>
  <section class="extra"><h3>Tus notas</h3>${notas}</section>
  <section class="extra"><h3>Carta del festival</h3><p class="saved">El domingo 6 Nori puede copiar su semana y mandártela. Pégala en el chat con Claude, pídele la carta y pégala aquí: le aparece en su último sobre.</p><textarea id="resumen">${esc(S.resumen)}</textarea><div class="row"><button class="btn" data-act="resumen">Guardar carta</button></div>
@@ -262,7 +271,10 @@ function songHtml(d){if(d.spotify)return`<span class="lbl">Canción del día</sp
 
 function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
 
-function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${(a.media||[]).map(m=>m.tipo==='video'?`<video controls playsinline preload="metadata" src="/api/foto/${encodeURIComponent(m.id)}"></video>`:`<img src="/api/foto/${encodeURIComponent(m.id)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`).join('')}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button></div>`:''}</div>`).join('')}
+function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${!luis&&a.anecdota?`<p class="anec"><b>Una anécdota:</b> ${esc(a.anecdota)}</p>`:''}${luis&&a.tieneAnecdota?'<p class="saved">Dejó una anécdota privada para Nori.</p>':''}${luis&&a.jugo?`<p class="saved">Jugó el quiz${a.puntaje!=null?': '+a.puntaje+' de 5':''}.</p>`:''}${(a.media||[]).map(m=>m.tipo==='video'?`<video controls playsinline preload="metadata" src="/api/foto/${encodeURIComponent(m.id)}"></video>`:`<img src="/api/foto/${encodeURIComponent(m.id)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`).join('')}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button></div>`:''}</div>`).join('')}
+
+function rankHtml(){const T=S.quiz.titulos||[];const l=(S.amigos||[]).filter(a=>a.jugo&&a.puntaje!=null&&!a.oculto).sort((x,y)=>y.puntaje-x.puntaje);
+ if(!l.length)return'';return`<div class="rank">${l.map(a=>`<div><span><b>${esc(a.nombre)}</b><br>${esc(T[a.puntaje]||'')}</span><span class="pts">${a.puntaje}/5</span></div>`).join('')}</div>`}
 
 function extrasHtml(ro){let h=`<section class="extra"><h3>Tu carta del festival</h3>`;
  if(S.resumen)h+=`<div class="letter">${esc(S.resumen)}</div>`;
@@ -299,7 +311,8 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
    if(!x.done)h+=`<button class="btn ghost" data-act="pass" ${(!x.pass&&passesUsed()>=PASSES)?'disabled':''}>${x.pass?'Quitar pase libre':'Usar pase libre'}</button>`;
    h+=`</div>`}
   if(d.k==='d01'){const vis=(S.amigos||[]).filter(a=>!a.oculto);
-   h+=`<section class="extra"><h3>Lo que tu gente dice de ti</h3>${vis.length?amigosHtml(vis,false):`<p class="saved">${ro?'Todavía no llegan mensajes.':'Hoy no llegaron mensajes, pero tu gente te quiere igual.'}</p>`}</section>`}
+   h+=`<section class="extra"><h3>Lo que tu gente dice de ti</h3>${vis.length?amigosHtml(vis,false):`<p class="saved">${ro?'Todavía no llegan mensajes.':'Hoy no llegaron mensajes, pero tu gente te quiere igual.'}</p>`}</section>`;
+   if(!ro&&S.quiz.mostrar){const rk=rankHtml();if(rk)h+=`<section class="extra"><h3>¿Quién te conoce más?</h3><p class="saved">Tus amigos jugaron un quiz sobre ti. Este es el ranking:</p>${rk}</section>`}}
   if(d.k==='d06'&&(d.unlocked||ro))h+=extrasHtml(ro)}
  s.innerHTML=h}
 
@@ -346,6 +359,8 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  if(g&&g.dataset.act==='verConfeti'){confetti();return}
  if(g&&g.dataset.act==='enviarMsg'){const t=$('nuevoMsg').value.trim();if(!t)return;if(await post('/api/luis',{tipo:'mensaje',text:t})){setBanner('Mensaje enviado.')}return}
  if(g&&g.dataset.act==='guardarSecreto'){if(await post('/api/luis',{tipo:'secreto',text:$('secretoTxt').value}))setBanner('Sobre secreto guardado.');return}
+ if(g&&g.dataset.act==='guardarQuiz'){const c=S.quiz.preguntas.map((_,i)=>$('qz-'+i).value);if(c.some(v=>v==='')){setBanner('Marca la respuesta correcta de las 5 preguntas.');return}
+  if(await post('/api/luis',{tipo:'quiz',clave:c.map(Number),mostrar:$('qzMostrar').checked}))setBanner('Respuestas del quiz guardadas.');return}
  const oc=e.target.closest('[data-ocultar]');if(oc){post('/api/luis',{tipo:'ocultar',id:oc.dataset.ocultar,oculto:oc.dataset.v==='1'});return}
  const a1=e.target.closest('[data-act="copyAmigos"]');if(a1){const i=$('amigosLink');try{await navigator.clipboard.writeText(i.value);setBanner('Enlace copiado.')}catch(_){i.select();setBanner('Selecciona el enlace y cópialo.')}return}
  const a0=e.target.closest('[data-act]');if(a0&&a0.dataset.act==='resumen'){const ok=await post('/api/luis',{tipo:'resumen',text:$('resumen').value});if(ok)setBanner('Carta guardada.');return}

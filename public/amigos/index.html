@@ -105,6 +105,9 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .secret{background:var(--forest);color:var(--on);border-radius:14px;padding:12px 14px;margin:14px 0 4px;font-weight:500}
 .thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
 .thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.opts{display:grid;gap:10px;margin-top:10px}
+.opt{font:inherit;font-size:17px;text-align:left;min-height:52px;padding:12px 16px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.opt:hover,.opt:focus-visible{border-color:var(--terra);outline:none}
 .saved{color:var(--muted);font-size:14px;margin:4px 0 0}
 .err{color:var(--terra);font-weight:700;margin:6px 0 0}
 </style>
@@ -123,6 +126,9 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <input class="inp" id="nombre" maxlength="60" autocomplete="name" required>
 <label class="lbl" for="mensaje">Tu mensaje para Nori</label>
 <textarea id="mensaje" maxlength="3000" required placeholder="Un recuerdo con ella, algo que admiras de ella, un deseo para este año…"></textarea>
+<label class="lbl" for="anecdota">Cuéntale una anécdota que viviste con ella (opcional)</label>
+<p class="saved" style="margin:0 0 6px">Solo Nori la va a leer.</p>
+<textarea id="anecdota" maxlength="3000" placeholder="Esa vez que…"></textarea>
 <span class="lbl">Fotos con ella (opcional, hasta 3)</span>
 <div class="row"><label class="btn ghost" for="fotos">Elegir fotos</label><input class="sr" type="file" id="fotos" accept="image/*" multiple><button class="link" type="button" id="quitarFotos" hidden>Quitar fotos</button></div>
 <div class="thumbs" id="thumbs"></div>
@@ -137,7 +143,17 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <section class="card" id="okCard" hidden>
 <h2>¡Gracias!</h2>
 <p id="okMsg">Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.</p>
-<div class="row"><button class="btn ghost" id="otro">Escribir otro mensaje</button></div>
+<div class="row"><button class="btn" id="jugar">Jugar: ¿cuánto conoces a Nori?</button><button class="btn ghost" id="otro">Escribir otro mensaje</button></div>
+</section>
+<section class="card" id="quizCard" hidden>
+<p class="saved" id="qNum"></p>
+<h2 id="qText"></h2>
+<div class="opts" id="qOpts"></div>
+</section>
+<section class="card" id="quizFin" hidden>
+<h2>¡Listo!</h2>
+<p>Tus respuestas quedaron guardadas. El 1 de diciembre sabremos si eres alma gemela certificada o conocido de WhatsApp.</p>
+<div class="row"><button class="btn ghost" id="otro2">Escribir otro mensaje</button></div>
 </section>
 <p class="foot">Una sorpresa de Luis para Nori.</p>
 </main>
@@ -145,7 +161,20 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 {
 const $=id=>document.getElementById(id);
 const MAXV=24*1024*1024;
-let fotos=[],video=null;
+let fotos=[],video=null,sent=null,qi=0,resp=[];
+const QUIZ=[
+ {q:'¿Cuántos cafés necesita Nori antes de ser persona?',o:['Ninguno, despierta radiante','Uno y ya','Tres, y no le hables antes','Nori ES café']},
+ {q:'Nori se pierde en un trekking. ¿Qué hace primero?',o:['Saca el mapa','Le saca foto a una flor','Le escribe a Luis','Busca una playlist para perderse mejor']},
+ {q:'"Veamos solo un capítulo más". ¿Cuántos ve en realidad?',o:['Uno, palabra de honor','Tres','La temporada completa','Hasta que se duerme con el control en la mano']},
+ {q:'Si su perrito pudiera hablar, ¿qué diría de ella?',o:['"Me da demasiados besos"','"Me saca demasiadas fotos"','"Me habla como si fuera un bebé"','"Le robo la cama y no dice nada"']},
+ {q:'¿Qué nunca falta en la cartera de Nori?',o:['Un libro','Snacks de emergencia','Un paño para los lentes','47 boletas arrugadas']}];
+function showQ(){const it=QUIZ[qi];$('qNum').textContent=`Pregunta ${qi+1} de ${QUIZ.length}`;$('qText').textContent=it.q;const box=$('qOpts');box.innerHTML='';
+ it.o.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='opt';b.textContent=t;b.addEventListener('click',()=>pick(i));box.appendChild(b)});box.querySelector('button').focus()}
+async function pick(i){resp.push(i);qi++;if(qi<QUIZ.length){showQ();return}
+ $('qOpts').innerHTML='<p class="saved">Guardando…</p>';
+ try{const r=await fetch('/api/amigos/quiz',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:sent.id,token:sent.token,respuestas:resp})});if(!r.ok)throw 0;
+  $('quizCard').hidden=true;$('quizFin').hidden=false}catch(_){$('qOpts').innerHTML='<p class="err">No se pudieron guardar tus respuestas. Revisa tu conexión.</p>'}}
+
 async function compress(file){const bmp=await createImageBitmap(file);const sc=Math.min(1,1600/Math.max(bmp.width,bmp.height));
  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
  return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('foto')),'image/jpeg',.82))}
@@ -167,15 +196,17 @@ $('f').addEventListener('submit',async e=>{e.preventDefault();$('err').textConte
  const nombre=$('nombre').value.trim(),mensaje=$('mensaje').value.trim();
  if(!nombre||!mensaje){$('err').textContent='Escribe tu nombre y tu mensaje.';return}
  const b=$('enviar');b.disabled=true;b.textContent='Enviando mensaje…';let fallos=0;
- try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje})});
-  if(!r.ok)throw new Error();const{id,token}=await r.json();
+ try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje,anecdota:$('anecdota').value.trim()})});
+  if(!r.ok)throw new Error();const{id,token}=await r.json();sent={id,token};
   for(let i=0;i<fotos.length;i++){try{await upload(id,token,fotos[i],'image/jpeg',`Subiendo foto ${i+1} de ${fotos.length}…`)}catch(_){fallos++}}
   if(video){try{await upload(id,token,video,videoType(video),'Subiendo video… puede tardar un poco')}catch(_){fallos++}}
   $('okMsg').textContent=fallos?`Tu mensaje quedó guardado, pero ${fallos===1?'un archivo no se pudo subir':fallos+' archivos no se pudieron subir'}. Puedes enviar otro mensaje con lo que faltó.`:'Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.';
   $('formCard').hidden=true;$('okCard').hidden=false}
  catch(_){$('err').textContent='No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.'}
  finally{b.disabled=false;b.textContent='Enviar mensaje'}});
-$('otro').addEventListener('click',()=>{$('mensaje').value='';fotos=[];video=null;$('fotos').value='';$('video').value='';drawThumbs();$('videoInfo').textContent='';$('quitarVideo').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
+$('jugar').addEventListener('click',()=>{if(!sent)return;qi=0;resp=[];$('okCard').hidden=true;$('quizCard').hidden=false;showQ()});
+$('otro2').addEventListener('click',()=>$('otro').click());
+$('otro').addEventListener('click',()=>{$('mensaje').value='';$('anecdota').value='';sent=null;$('quizFin').hidden=true;$('quizCard').hidden=true;fotos=[];video=null;$('fotos').value='';$('video').value='';drawThumbs();$('videoInfo').textContent='';$('quitarVideo').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
 }
 </script>
 </body>

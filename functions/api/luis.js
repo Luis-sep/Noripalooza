@@ -1,4 +1,5 @@
 import { json, estado, findDay } from '../../lib/util.js';
+import { QUIZ } from '../../lib/data.js';
 
 // Herramientas de Luis: editar la nota y la pista de cada día, y pegar la carta final.
 export async function onRequestPost({ request, env, data }) {
@@ -29,6 +30,10 @@ export async function onRequestPost({ request, env, data }) {
   } else if (body.tipo === 'borrarMensaje') {
     const list = (await env.NORI_KV.get('mensajes', 'json')) || [];
     await env.NORI_KV.put('mensajes', JSON.stringify(list.filter((m) => m.id !== body.id)));
+  } else if (body.tipo === 'quiz') {
+    const c = body.clave;
+    if (!Array.isArray(c) || c.length !== QUIZ.length || !c.every((x, i) => Number.isInteger(x) && x >= 0 && x < QUIZ[i].o.length)) return json({ error: 'clave-quiz' }, 400);
+    await env.NORI_KV.put('quiz', JSON.stringify({ clave: c, mostrar: body.mostrar !== false }));
   } else if (body.tipo === 'ocultar') {
     const key = 'amigo:' + String(body.id || '');
     const cur = await env.NORI_KV.get(key, 'json');

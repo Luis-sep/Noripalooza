@@ -10,6 +10,7 @@ import * as capsula from '../functions/api/capsula.js';
 import * as luis from '../functions/api/luis.js';
 import * as amigos from '../functions/api/amigos.js';
 import * as amigosMedia from '../functions/api/amigos/media.js';
+import * as amigosQuiz from '../functions/api/amigos/quiz.js';
 import { json, getCookie, roleFor } from '../lib/util.js';
 
 const routes = [
@@ -22,6 +23,7 @@ const routes = [
   ['/api/luis', luis],
   ['/api/amigos', amigos],
   ['/api/amigos/media', amigosMedia],
+  ['/api/amigos/quiz', amigosQuiz],
 ];
 
 const handlerFor = (mod, method) =>
