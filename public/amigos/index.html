@@ -167,7 +167,7 @@ const QUIZ=[
  {q:"¿Cuál es la gran debilidad de Nori?",o:["Las papas fritas", "El queso", "Todo lo dulce", "Las ofertas"]},
  {q:"Le llega un millón de pesos sorpresa. ¿En qué se lo gasta?",o:["En un viaje, sin pensarlo dos veces", "Lo ahorra, muy responsable", "Ropa nueva", "Un mueble para la casa"]},
  {q:"¿Cómo se llama su perrito?",o:["Toby", "Pancho", "Rocky", "Lucas"]},
- {q:"Si Lucas pudiera hablar, ¿qué diría de Nori?",o:["\"Me saca demasiadas fotos\"", "\"Me da demasiados besos\"", "\"Nunca me da premios\"", "\"Me deja dormir en su almohada\""]}];
+ {q:"¿Qué saga no puede faltar en una noche de películas con Nori?",o:["El Señor de los Anillos", "Crepúsculo", "Harry Potter", "Los juegos del hambre"]}];
 function showQ(){const it=QUIZ[qi];$('qNum').textContent=`Pregunta ${qi+1} de ${QUIZ.length}`;$('qText').textContent=it.q;const box=$('qOpts');box.innerHTML='';
  it.o.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='opt';b.textContent=t;b.addEventListener('click',()=>pick(i));box.appendChild(b)});box.querySelector('button').focus()}
 async function pick(i){resp.push(i);qi++;if(qi<QUIZ.length){showQ();return}
