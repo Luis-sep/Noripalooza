@@ -106,6 +106,11 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .nedit{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
 .nedit b{display:block;margin-bottom:6px}
 .nedit textarea{min-height:70px}
+.amigo{background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:14px;margin-top:10px}
+.amigo b{display:block;color:var(--forest);margin-bottom:4px}
+.amigo p{margin:0;white-space:pre-wrap}
+.amigo img{display:block;width:100%;max-height:340px;object-fit:cover;border-radius:12px;margin-top:10px}
+.amigo.off{opacity:.55}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -203,6 +208,7 @@ function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
  const notas=S.days.map(d=>`<div class="nedit"><b>${d.dow} ${d.n} · ${esc(d.t)}</b><label class="lbl" for="nc-${d.k}" style="margin:0 0 4px">Tu nota</label><textarea id="nc-${d.k}">${esc(notaDrafts[d.k]?.carta??d.carta??'')}</textarea><label class="lbl" for="np-${d.k}" style="margin:8px 0 4px">Pista del regalo (opcional)</label><input class="inp" id="np-${d.k}" value="${esc(notaDrafts[d.k]?.pista??d.pista??'')}"><div class="row"><button class="btn ghost" data-nota="${d.k}">Guardar nota</button></div></div>`).join('');
  el.innerHTML=`<h3 class="sec" style="margin-top:20px">Panel de Luis</h3><p class="saved">Ves cómo va Nori sin leer lo que escribe: eso queda para ella. Puedes abrir cualquier sobre para revisarlo.</p>
  <div class="scroll"><table class="ptable"><thead><tr><th>Día</th><th>Sobre</th><th>Abierto</th><th>Reto</th><th>Ánimo</th><th>¿Se cumplió?</th><th>Fotos</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <section class="extra"><h3>Mensajes de amigos (${(S.amigos||[]).length})</h3><p class="saved">Comparte este enlace por WhatsApp. Los amigos solo pueden escribir; Nori los ve todos juntos el 1 de diciembre. Puedes ocultar cualquiera antes.</p><div class="row"><input class="inp" id="amigosLink" readonly value="${esc(location.origin+'/amigos')}" style="flex:1"><button class="btn ghost" data-act="copyAmigos">Copiar enlace</button></div>${amigosHtml(S.amigos||[],true)}</section>
  <section class="extra"><h3>Tus notas</h3>${notas}</section>
  <section class="extra"><h3>Carta del festival</h3><p class="saved">El domingo 6 Nori puede copiar su semana y mandártela. Pégala en el chat con Claude, pídele la carta y pégala aquí: le aparece en su último sobre.</p><textarea id="resumen">${esc(S.resumen)}</textarea><div class="row"><button class="btn" data-act="resumen">Guardar carta</button></div>
  <p class="saved">Cápsula del tiempo: ${S.capsula.sealedAt?'sellada':'todavía no la escribe'}.</p></section>`}
@@ -210,6 +216,8 @@ function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
 const ENV=`<svg class="env" id="env" viewBox="0 0 300 220" aria-hidden="true"><rect class="card" x="40" y="60" width="220" height="130" rx="8" fill="var(--card)" stroke="var(--line)" stroke-width="3"/><rect x="10" y="40" width="280" height="170" rx="14" fill="var(--terra)"/><path d="M10 200 L150 120 L290 200" fill="none" stroke="#FFF8EE" stroke-opacity=".35" stroke-width="4"/><path class="flap" d="M10 54 Q10 40 24 40 L276 40 Q290 40 290 54 L150 140 Z" fill="var(--forest)"/><circle cx="150" cy="128" r="16" fill="var(--gold)"/></svg>`;
 
 function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
+
+function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${a.fotoId?`<img src="/api/foto/${encodeURIComponent(a.fotoId)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`:''}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button></div>`:''}</div>`).join('')}
 
 function extrasHtml(ro){let h=`<section class="extra"><h3>Tu carta del festival</h3>`;
  if(S.resumen)h+=`<div class="letter">${esc(S.resumen)}</div>`;
@@ -245,6 +253,8 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
   if(!ro){h+=`<div class="row" style="margin-top:22px"><button class="btn" data-act="done" ${x.pass?'disabled':''}>${x.done?'Reto cumplido ✓':'Marcar reto cumplido'}</button>`;
    if(!x.done)h+=`<button class="btn ghost" data-act="pass" ${(!x.pass&&passesUsed()>=PASSES)?'disabled':''}>${x.pass?'Quitar pase libre':'Usar pase libre'}</button>`;
    h+=`</div>`}
+  if(d.k==='d01'){const vis=(S.amigos||[]).filter(a=>!a.oculto);
+   h+=`<section class="extra"><h3>Lo que tu gente dice de ti</h3>${vis.length?amigosHtml(vis,false):`<p class="saved">${ro?'Todavía no llegan mensajes.':'Hoy no llegaron mensajes, pero tu gente te quiere igual.'}</p>`}</section>`}
   if(d.k==='d06'&&(d.unlocked||ro))h+=extrasHtml(ro)}
  s.innerHTML=h}
 
@@ -260,6 +270,8 @@ document.addEventListener('click',async e=>{
  const o=e.target.closest('[data-open]');if(o){openSheet(o.dataset.open);return}
  if(e.target.closest('[data-close]')||e.target.id==='overlay'){closeSheet();return}
  const nb=e.target.closest('[data-nota]');if(nb){const k=nb.dataset.nota;const ok=await post('/api/luis',{tipo:'nota',k,carta:$('nc-'+k).value,pista:$('np-'+k).value});if(ok){delete notaDrafts[k];setBanner('Nota guardada.');render()}return}
+const oc=e.target.closest('[data-ocultar]');if(oc){post('/api/luis',{tipo:'ocultar',id:oc.dataset.ocultar,oculto:oc.dataset.v==='1'});return}
+ const a1=e.target.closest('[data-act="copyAmigos"]');if(a1){const i=$('amigosLink');try{await navigator.clipboard.writeText(i.value);setBanner('Enlace copiado.')}catch(_){i.select();setBanner('Selecciona el enlace y cópialo.')}return}
  const a0=e.target.closest('[data-act]');if(a0&&a0.dataset.act==='resumen'){const ok=await post('/api/luis',{tipo:'resumen',text:$('resumen').value});if(ok)setBanner('Carta guardada.');return}
  if(!openKey)return;const k=openKey,x=data(k);
  const m=e.target.closest('[data-mood]');if(m){post('/api/dia/'+k,{mood:x.mood===m.dataset.mood?null:m.dataset.mood});return}

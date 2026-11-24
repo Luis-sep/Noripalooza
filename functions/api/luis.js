@@ -14,6 +14,12 @@ export async function onRequestPost({ request, env, data }) {
   } else if (body.tipo === 'resumen') {
     const text = typeof body.text === 'string' ? body.text.slice(0, 20000) : '';
     await env.NORI_KV.put('resumen', JSON.stringify({ text, at: new Date().toISOString() }));
+  } else if (body.tipo === 'ocultar') {
+    const key = 'amigo:' + String(body.id || '');
+    const cur = await env.NORI_KV.get(key, 'json');
+    if (!cur) return json({ error: 'mensaje' }, 404);
+    cur.oculto = body.oculto === true;
+    await env.NORI_KV.put(key, JSON.stringify(cur));
   } else {
     return json({ error: 'tipo' }, 400);
   }

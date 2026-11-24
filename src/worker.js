@@ -8,6 +8,7 @@ import * as fotoUp from '../functions/api/foto/index.js';
 import * as fotoGet from '../functions/api/foto/[id].js';
 import * as capsula from '../functions/api/capsula.js';
 import * as luis from '../functions/api/luis.js';
+import * as amigos from '../functions/api/amigos.js';
 import { json } from '../lib/util.js';
 
 const routes = [
@@ -18,6 +19,7 @@ const routes = [
   [/^\/api\/foto\/([^/]+)$/, fotoGet, ['id']],
   ['/api/capsula', capsula],
   ['/api/luis', luis],
+  ['/api/amigos', amigos],
 ];
 
 const handlerFor = (mod, method) =>

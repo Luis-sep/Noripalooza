@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un mensaje para Nori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: tender, playful, a gift between two people.
+   IDEA: a festival wristband + a passport of envelopes, one per day.
+   PICTURE: the line-up as ticket stubs and an envelope that opens.
+   COLOUR and TYPE: forest green, terracotta, mustard on warm paper; Bungee + Space Grotesk.
+   LAYOUT: one calm phone column; hero with today, line-up, album. */
+:root{color-scheme:light dark;
+--bg:light-dark(#F6EEDC,#13201A);--card:light-dark(#FFFDF7,#1D2C23);--ink:light-dark(#1B1B1B,#F3ECDD);
+--muted:light-dark(#55524B,#BDB6A8);--forest:light-dark(#2F5D3A,#93C296);--terra:light-dark(#B0532A,#E58E60);
+--gold:light-dark(#E2A729,#E9B94A);--moss:light-dark(#7C9A4E,#9DB873);--line:light-dark(#E3D8C1,#2E4034);--on:light-dark(#FFF8EE,#13201A)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Space Grotesk",system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:640px;margin:0 auto;padding:clamp(20px,4vw,40px) 16px 64px}
+.brand{font-family:Bungee,system-ui,sans-serif;font-weight:400;line-height:.95;margin:0;text-align:center}
+.brand .a{display:block;font-size:clamp(56px,16vw,92px);color:var(--terra)}
+.brand .b{display:flex;justify-content:center;align-items:center;gap:4px;font-size:clamp(34px,10vw,58px);color:var(--forest)}
+.brand svg{width:1.9em;height:.88em}
+.dates{text-align:center;margin:10px 0 0;font-weight:700;color:var(--forest)}
+.banner{margin:16px 0 0;padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--muted);font-size:14px}
+.banner:empty{display:none}
+.hero{margin-top:22px;background:var(--forest);color:var(--on);border-radius:22px;padding:22px}
+.hero h2{font-family:Bungee,sans-serif;font-weight:400;font-size:28px;line-height:1.1;margin:4px 0 8px;text-wrap:balance}
+.hero p{margin:0}
+.hero .k{font-size:14px;font-weight:700;opacity:.9}
+.stamps{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.stamp{width:26px;height:26px;border-radius:50%;border:2px dashed currentColor;opacity:.55}
+.stamp.op{opacity:1;border-style:solid}
+.stamp.ok{opacity:1;border:0;background:var(--gold)}
+.btn{font:inherit;font-weight:700;min-height:44px;padding:10px 18px;border-radius:999px;border:0;cursor:pointer;background:var(--terra);color:#FFF8EE;display:inline-flex;align-items:center;gap:8px}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.light{background:var(--on);color:var(--forest)}
+.btn:focus-visible,.day:focus-visible,.chip:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn[disabled]{opacity:.5;cursor:default}
+h3.sec{font-family:Bungee,sans-serif;font-weight:400;font-size:24px;color:var(--terra);margin:34px 0 12px}
+.list{display:grid;gap:10px}
+.day{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:16px;cursor:pointer;width:100%}
+.day.today{border:2px solid var(--terra)}
+.day .d{flex:none;width:58px;text-align:center;color:var(--forest)}
+.day .d b{display:block;font-family:Bungee,sans-serif;font-weight:400;font-size:26px;line-height:1}
+.day .d span{font-size:13px;font-weight:700}
+.day .t{flex:1}
+.day .t b{display:block;font-size:17px}
+.day .t span{font-size:14px;color:var(--muted)}
+.pill{flex:none;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap;background:var(--line);color:var(--ink)}
+.pill.ready{background:var(--terra);color:#FFF8EE}
+.pill.ok{background:var(--gold);color:#1B1B1B}
+.album{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.album figure{margin:0;position:relative}
+.album img,.photos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block;background:var(--line)}
+.album figcaption{position:absolute;left:6px;bottom:6px;font-size:12px;font-weight:700;background:var(--card);color:var(--ink);padding:1px 7px;border-radius:999px}
+.empty{color:var(--muted);background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:18px;text-align:center}
+.overlay{position:fixed;inset:0;background:rgba(10,20,14,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.overlay[hidden]{display:none}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:20px 18px 36px}
+.sheet .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sheet .top span{font-weight:700;color:var(--forest)}
+.close{all:unset;cursor:pointer;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;font-size:26px;color:var(--ink)}
+.close:focus-visible{outline:3px solid var(--gold)}
+.sheet h2{font-family:Bungee,sans-serif;font-weight:400;font-size:30px;line-height:1.1;color:var(--terra);margin:6px 0 10px;text-wrap:balance}
+.reto{font-size:19px;line-height:1.5;margin:0 0 16px;text-wrap:pretty}
+.env{display:block;width:min(300px,80%);margin:18px auto}
+.env .flap{transform-origin:150px 40px;transition:transform .7s ease}
+.env.open .flap{transform:scaleY(-1)}
+.env .card{transition:transform .7s ease .35s}
+.env.open .card{transform:translateY(-46px)}
+@media (prefers-reduced-motion:reduce){.env .flap,.env .card{transition:none}}
+.carta{background:var(--card);border-left:0;border:2px solid var(--gold);border-radius:14px;padding:12px 14px;margin:0 0 16px}
+.carta b{color:var(--forest)}
+.lbl{display:block;font-weight:700;margin:16px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:15px;min-height:44px;padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--forest);border-color:var(--forest);color:var(--on)}
+textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.saved{font-size:14px;color:var(--muted)}
+.photos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.song{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;text-decoration:none;color:var(--ink);background:var(--card);border:2px solid var(--moss);border-radius:14px;padding:10px 14px;margin:0 0 6px}
+.song span{width:100%;font-size:13px;font-weight:700;color:var(--forest)}
+.inp{width:100%;font:inherit;font-size:16px;min-height:44px;padding:10px 12px;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink)}
+.inp:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.extra{margin-top:30px;padding-top:20px;border-top:2px dashed var(--line)}
+.extra h3{font-family:Bungee,sans-serif;font-weight:400;font-size:22px;color:var(--forest);margin:0 0 10px}
+.letter{white-space:pre-wrap;background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:16px;font-size:17px;line-height:1.6}
+.sealed{background:var(--forest);color:var(--on);border-radius:16px;padding:16px;margin:0}
+.scroll{overflow-x:auto}
+.ptable{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px;background:var(--card);border-radius:14px;overflow:hidden}
+.ptable th,.ptable td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.ptable th{background:var(--line);font-size:14px}
+.foot{margin-top:36px;text-align:center;color:var(--muted);font-size:14px}
+</style>
+<style>
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;margin-top:22px}
+.card h2{font-family:Bungee,sans-serif;font-weight:400;font-size:26px;line-height:1.1;color:var(--terra);margin:0 0 10px;text-wrap:balance}
+.card form{display:flex;flex-direction:column;gap:6px}
+.secret{background:var(--forest);color:var(--on);border-radius:14px;padding:12px 14px;margin:14px 0 4px;font-weight:500}
+.prev{display:block;max-width:100%;max-height:260px;border-radius:12px;margin-top:8px}
+.err{color:var(--terra);font-weight:700;margin:6px 0 0}
+</style>
+</head>
+<body>
+<main class="wrap">
+<h1 class="brand"><span class="a">NORI</span><span class="b">PAL<svg viewBox="0 0 292 134" role="img" aria-label="OO"><rect x="10" y="18" width="118" height="100" rx="34" fill="none" stroke="currentColor" stroke-width="18"/><rect x="164" y="18" width="118" height="100" rx="34" fill="none" stroke="currentColor" stroke-width="18"/><path d="M128 52 Q146 36 164 52" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round"/><path d="M223 86 L228 72 L233 86 L247 91 L233 96 L228 110 L223 96 L209 91 Z" fill="#E2A729"/></svg>ZA</span></h1>
+<p class="dates">27 nov — 6 dic 2026 · Festival del brillo</p>
+
+<section class="card" id="formCard">
+<h2>Escríbele algo a Nori</h2>
+<p>Esta semana Nori está viviendo su Noripalooza, un festival para reconectar con su creatividad y su brillo. Su cumpleaños es el 1 de diciembre, y ese día va a leer juntos los mensajes de toda su gente.</p>
+<p class="secret">Es sorpresa: por favor no le cuentes.</p>
+<form id="f" novalidate>
+<label class="lbl" for="nombre">Tu nombre</label>
+<input class="inp" id="nombre" maxlength="60" autocomplete="name" required>
+<label class="lbl" for="mensaje">Tu mensaje para Nori</label>
+<textarea id="mensaje" maxlength="3000" required placeholder="Un recuerdo con ella, algo que admiras de ella, un deseo para este año…"></textarea>
+<span class="lbl">Una foto con ella (opcional)</span>
+<div class="row"><label class="btn ghost" for="foto">Elegir foto</label><input class="sr" type="file" id="foto" accept="image/*"><button class="link" type="button" id="quitar" hidden>Quitar foto</button></div>
+<img class="prev" id="prev" alt="Vista previa de tu foto" hidden>
+<div class="row" style="margin-top:18px"><button class="btn" type="submit" id="enviar">Enviar mensaje</button></div>
+<p class="err" id="err" role="alert"></p>
+</form>
+</section>
+
+<section class="card" id="okCard" hidden>
+<h2>¡Gracias!</h2>
+<p>Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.</p>
+<div class="row"><button class="btn ghost" id="otro">Escribir otro mensaje</button></div>
+</section>
+<p class="foot">Una sorpresa de Luis para Nori.</p>
+</main>
+<script>
+{
+const $=id=>document.getElementById(id);
+let foto=null;
+async function compress(file){const bmp=await createImageBitmap(file);const sc=Math.min(1,1400/Math.max(bmp.width,bmp.height));
+ const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+ return c.toDataURL('image/jpeg',.8)}
+$('foto').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;$('err').textContent='';
+ try{foto=await compress(f);$('prev').src=foto;$('prev').hidden=false;$('quitar').hidden=false}catch(_){foto=null;$('err').textContent='No pudimos leer esa foto. Prueba con otra.'}});
+$('quitar').addEventListener('click',()=>{foto=null;$('foto').value='';$('prev').hidden=true;$('quitar').hidden=true});
+$('f').addEventListener('submit',async e=>{e.preventDefault();$('err').textContent='';
+ const nombre=$('nombre').value.trim(),mensaje=$('mensaje').value.trim();
+ if(!nombre||!mensaje){$('err').textContent='Escribe tu nombre y tu mensaje.';return}
+ const b=$('enviar');b.disabled=true;b.textContent='Enviando…';
+ try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje,foto})});
+  if(!r.ok)throw new Error();
+  $('formCard').hidden=true;$('okCard').hidden=false}
+ catch(_){$('err').textContent='No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.'}
+ finally{b.disabled=false;b.textContent='Enviar mensaje'}});
+$('otro').addEventListener('click',()=>{$('mensaje').value='';foto=null;$('foto').value='';$('prev').hidden=true;$('quitar').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
+}
+</script>
+</body>
+</html>
