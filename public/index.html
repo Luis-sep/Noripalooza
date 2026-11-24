@@ -181,9 +181,9 @@ select.inp{appearance:auto}
 <div id="album"></div>
 <h3 class="sec">Tus versiones del festival</h3>
 <div class="versiones">
-<figure><img src="/avatares/hogwarts.jpg" alt="Nori con varita en un gran comedor con velas" loading="lazy"><figcaption>Magia</figcaption></figure>
-<figure><img src="/avatares/friends.jpg" alt="Nori sonriendo en un sillón naranjo de café" loading="lazy"><figcaption>Café</figcaption></figure>
-<figure><img src="/avatares/anime.jpg" alt="Nori en versión anime" loading="lazy"><figcaption>Anime</figcaption></figure>
+<figure><img src="/avatares/anime.jpg" alt="Nori en versión anime" loading="lazy"><figcaption>1 · Anime</figcaption></figure>
+<figure><img src="/avatares/friends.jpg" alt="Nori sonriendo en un sillón naranjo de café" loading="lazy"><figcaption>2 · Café</figcaption></figure>
+<figure><img src="/avatares/hogwarts.jpg" alt="Nori con varita en un gran comedor con velas" loading="lazy"><figcaption>3 · Magia</figcaption></figure>
 </div>
 <p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="logout">Salir</button></p>
 </div>
@@ -239,7 +239,7 @@ function status(d){const x=data(d.k);
  if(!d.unlocked)return['Se abre el '+d.n,''];if(x.opened)return['Abierto',''];return['¡Sobre listo!','ready']}
 
 const AVA={hogwarts:['Nori en el Gran Comedor','/avatares/hogwarts.jpg'],friends:['Nori en el café','/avatares/friends.jpg'],anime:['Nori anime','/avatares/anime.jpg']};
-function avatarFor(t){if(t>='2026-11-27'&&t<='2026-11-30')return'hogwarts';if(t>='2026-12-02'&&t<='2026-12-06')return'friends';return'anime'}
+function avatarFor(t){if(t<='2026-11-30')return'anime';if(t<='2026-12-03')return'friends';return'hogwarts'}
 function renderHero(){const h=$('hero');const first=S.days[0].date,last=S.days[S.days.length-1].date,t=S.today;
  const stamps=S.days.map(d=>{const x=data(d.k);return`<span class="stamp ${x.done||x.pass?'ok':x.opened?'op':''}" title="${esc(d.t)}"></span>`}).join('');
  const doneN=S.days.filter(d=>data(d.k).done||data(d.k).pass).length;let body;
