@@ -132,6 +132,9 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <label class="lbl" for="anecdota">Cuéntale una anécdota que viviste con ella (opcional)</label>
 <p class="saved" style="margin:0 0 6px">Solo Nori la va a leer.</p>
 <textarea id="anecdota" maxlength="3000" placeholder="Esa vez que…"></textarea>
+<label class="lbl" for="desafio">Desafía a Nori con algo (opcional)</label>
+<p class="saved" style="margin:0 0 6px">Algo divertido o creativo que pueda hacer durante su festival. Lo verá desde el 27 y te mostrará la prueba.</p>
+<input class="inp" id="desafio" maxlength="500" placeholder="Dibuja a Lucas con los ojos cerrados">
 <span class="lbl">Fotos con ella (opcional, hasta 3)</span>
 <div class="row"><label class="btn ghost" for="fotos">Elegir fotos</label><input class="sr" type="file" id="fotos" accept="image/*" multiple><button class="link" type="button" id="quitarFotos" hidden>Quitar fotos</button></div>
 <div class="thumbs" id="thumbs"></div>
@@ -146,7 +149,8 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <section class="card" id="okCard" hidden>
 <h2>¡Gracias!</h2>
 <p id="okMsg">Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.</p>
-<div class="row"><button class="btn" id="jugar">Jugar: ¿cuánto conoces a Nori?</button><button class="btn ghost" id="otro">Escribir otro mensaje</button></div>
+<div class="aprende" style="margin-top:14px"><p><b>¿Quieres hacer un quiz de Nori?</b></p><p>Son 5 preguntas chistosas y es opcional.</p></div>
+<div class="row"><button class="btn" id="jugar">Sí, quiero jugar</button><button class="btn ghost" id="otro">No, gracias</button></div>
 </section>
 <section class="card" id="quizCard" hidden>
 <p class="saved" id="qNum"></p>
@@ -208,7 +212,7 @@ $('f').addEventListener('submit',async e=>{e.preventDefault();$('err').textConte
  const nombre=$('nombre').value.trim(),mensaje=$('mensaje').value.trim();
  if(!nombre||!mensaje){$('err').textContent='Escribe tu nombre y tu mensaje.';return}
  const b=$('enviar');b.disabled=true;b.textContent='Enviando mensaje…';let fallos=0;
- try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje,anecdota:$('anecdota').value.trim()})});
+ try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje,anecdota:$('anecdota').value.trim(),desafio:$('desafio').value.trim()})});
   if(!r.ok)throw new Error();const{id,token}=await r.json();sent={id,token};
   for(let i=0;i<fotos.length;i++){try{await upload(id,token,fotos[i],'image/jpeg',`Subiendo foto ${i+1} de ${fotos.length}…`)}catch(_){fallos++}}
   if(video){try{await upload(id,token,video,videoType(video),'Subiendo video… puede tardar un poco')}catch(_){fallos++}}
@@ -218,7 +222,7 @@ $('f').addEventListener('submit',async e=>{e.preventDefault();$('err').textConte
  finally{b.disabled=false;b.textContent='Enviar mensaje'}});
 $('jugar').addEventListener('click',()=>{if(!sent)return;qi=0;resp=[];$('okCard').hidden=true;$('quizCard').hidden=false;showQ()});
 $('otro2').addEventListener('click',()=>$('otro').click());
-$('otro').addEventListener('click',()=>{$('mensaje').value='';$('anecdota').value='';sent=null;$('quizFin').hidden=true;$('quizCard').hidden=true;fotos=[];video=null;$('fotos').value='';$('video').value='';drawThumbs();$('videoInfo').textContent='';$('quitarVideo').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
+$('otro').addEventListener('click',()=>{$('mensaje').value='';$('anecdota').value='';$('desafio').value='';sent=null;$('quizFin').hidden=true;$('quizCard').hidden=true;fotos=[];video=null;$('fotos').value='';$('video').value='';drawThumbs();$('videoInfo').textContent='';$('quitarVideo').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
 }
 </script>
 </body>

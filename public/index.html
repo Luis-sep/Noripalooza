@@ -142,6 +142,11 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .rank b{font-size:17px}.rank span{font-size:14px;color:var(--muted)}
 .rank .pts{font-family:Bungee,sans-serif;font-size:20px;color:var(--terra);white-space:nowrap}
 select.inp{appearance:auto}
+.des{background:var(--card);border:2px solid var(--moss);border-radius:16px;padding:14px;margin-top:10px}
+.des.ok{border-color:var(--gold)}
+.des b{color:var(--forest)}.des p{margin:6px 0 0;font-size:17px}
+.insignias{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.insignias span{width:30px;height:30px;border-radius:50%;background:var(--gold);display:grid;place-items:center;color:#1B1B1B;font-weight:700;font-size:15px}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -168,6 +173,7 @@ select.inp{appearance:auto}
 <section id="msgs"></section>
 <h3 class="sec">Line-up</h3>
 <div class="list" id="list"></div>
+<section id="desafios"></section>
 <section id="secreto"></section>
 <h3 class="sec">Álbum del festival</h3>
 <div id="album"></div>
@@ -258,6 +264,7 @@ function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
   <section class="extra"><h3>Quiz de amigos</h3><p class="saved">Marca la respuesta correcta de cada pregunta; con eso se arma el ranking.</p>${S.quiz.preguntas.map((q,i)=>`<label class="lbl" for="qz-${i}">${i+1}. ${esc(q.q)}</label><select class="inp" id="qz-${i}"><option value="">— Elige la correcta —</option>${q.o.map((o,j)=>`<option value="${j}" ${S.quiz.clave&&S.quiz.clave[i]===j?'selected':''}>${esc(o)}</option>`).join('')}</select>`).join('')}
   <label class="row" style="margin-top:12px"><input type="checkbox" id="qzMostrar" ${S.quiz.mostrar?'checked':''} style="width:22px;height:22px"> Mostrarle el podio a Nori el 1 de diciembre</label>
   <div class="row"><button class="btn" data-act="guardarQuiz">Guardar respuestas del quiz</button></div>${rankHtml(true)||'<p class="saved">Todavía nadie juega.</p>'}<p class="saved">Nori solo ve el podio (los 3 primeros, sin puntajes); el resto aparece como "también jugaron".</p></section>
+  <section class="extra"><h3>Desafíos de amigos (${(S.desafios||[]).length})</h3><p class="saved">Nori los ve desde el 27 de noviembre, a medida que llegan. Para ocultar uno, oculta el mensaje de ese amigo más abajo.</p>${desafiosHtml(S.desafios||[],true)}</section>
   <section class="extra"><h3>Mensajes de amigos (${(S.amigos||[]).length})</h3><p class="saved">Comparte este enlace por WhatsApp. Los amigos solo pueden escribir; Nori los ve todos juntos el 1 de diciembre. Puedes ocultar cualquiera antes.</p><div class="row"><input class="inp" id="amigosLink" readonly value="${esc(location.origin+'/amigos')}" style="flex:1"><button class="btn ghost" data-act="copyAmigos">Copiar enlace</button></div>${amigosHtml(S.amigos||[],true)}</section>
  <section class="extra"><h3>Tus notas</h3>${notas}</section>
  <section class="extra"><h3>Carta del festival</h3><p class="saved">El domingo 6 Nori puede copiar su semana y mandártela. Pégala en el chat con Claude, pídele la carta y pégala aquí: le aparece en su último sobre.</p><textarea id="resumen">${esc(S.resumen)}</textarea><div class="row"><button class="btn" data-act="resumen">Guardar carta</button></div>
@@ -279,7 +286,7 @@ function rankHtml(full){const T=S.quiz.titulos||[];const l=(S.amigos||[]).filter
  const top=l.slice(0,3),rest=l.length-top.length,med=['1.º','2.º','3.º'];
  return`<div class="rank">${top.map((a,i)=>`<div><span><b>${esc(a.nombre)}</b><br>${esc(T[a.puntaje]||'')}</span><span class="pts">${med[i]}</span></div>`).join('')}</div>${rest?`<p class="saved">Y ${rest===1?'una persona más también jugó':rest+' personas más también jugaron'} por ti.</p>`:''}`}
 
-function extrasHtml(ro){let h=`<section class="extra"><h3>Tu carta del festival</h3>`;
+function extrasHtml(ro){const dl=S.desafios||[],dn=dl.filter(d=>d.hecho).length;let h=dl.length?`<section class="extra"><h3>Desafíos cumplidos</h3><p class="reto">Cumpliste ${dn} de ${dl.length} desafíos de tus amigos.</p>${dn?`<div class="insignias">${'<span>★</span>'.repeat(dn)}</div>`:''}</section>`:'';h+=`<section class="extra"><h3>Tu carta del festival</h3>`;
  if(S.resumen)h+=`<div class="letter">${esc(S.resumen)}</div>`;
  else if(!ro)h+=`<p class="saved">Si quieres, copia tu semana y mándasela a Luis: él te va a preparar una carta sobre todo lo que viviste.</p><div class="row"><button class="btn ghost" data-act="copy">Copiar mi semana</button><span class="saved" id="copied"></span></div><textarea id="weekbox" hidden readonly></textarea>`;
  else h+=`<p class="saved">Todavía no hay carta.</p>`;
@@ -342,7 +349,12 @@ function confetti(){const party=$('party');party.hidden=false;
  (function step(t){x.clearRect(0,0,W,H);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(p.y>H){p.y=-10;p.x=Math.random()*W}x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore()});
   if(t-t0<7000&&!party.hidden)requestAnimationFrame(step);else x.clearRect(0,0,W,H)})(t0)}
 
-function render(){if(!S)return;renderMsgs();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
+function desafiosHtml(list,luis){return list.map(d=>`<div class="des ${d.hecho?'ok':''} ${d.oculto?'off':''}"><b>${esc(d.nombre)} te desafía:</b><p>${esc(d.texto)}</p>${(d.fotos||[]).length?`<div class="photos">${d.fotos.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Prueba del desafío" loading="lazy">`).join('')}</div>`:''}${luis?(d.hecho?'<p class="saved">Nori lo cumplió.</p>':''):`<div class="row"><button class="btn ${d.hecho?'ghost':''}" data-des="${esc(d.id)}" data-v="${d.hecho?'0':'1'}">${d.hecho?'Hecho ✓ (deshacer)':'¡Hecho!'}</button><label class="btn ghost" for="df-${esc(d.id)}">Subir prueba</label><input class="sr" type="file" accept="image/*" id="df-${esc(d.id)}" data-desfoto="${esc(d.id)}"></div>`}</div>`).join('')}
+function renderDesafios(){const el=$('desafios');if(isLuis()){el.innerHTML='';return}const l=S.desafios||[];if(!l.length){el.innerHTML='';return}
+ const n=l.filter(d=>d.hecho).length;
+ el.innerHTML=`<h3 class="sec">Desafíos de tus amigos</h3><p class="saved">Cúmplelos cuando quieras durante el festival. Cada uno cumplido es una insignia.</p>${n?`<div class="insignias" aria-label="${n} insignias">${'<span>★</span>'.repeat(n)}</div>`:''}${desafiosHtml(l,false)}`}
+
+function render(){if(!S)return;renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
 function closeSheet(){openKey=null;$('overlay').hidden=true}
 
@@ -364,6 +376,7 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  if(g&&g.dataset.act==='guardarSecreto'){if(await post('/api/luis',{tipo:'secreto',text:$('secretoTxt').value}))setBanner('Sobre secreto guardado.');return}
  if(g&&g.dataset.act==='guardarQuiz'){const c=S.quiz.preguntas.map((_,i)=>$('qz-'+i).value);if(c.some(v=>v==='')){setBanner('Marca la respuesta correcta de las 5 preguntas.');return}
   if(await post('/api/luis',{tipo:'quiz',clave:c.map(Number),mostrar:$('qzMostrar').checked}))setBanner('Respuestas del quiz guardadas.');return}
+ const dz=e.target.closest('[data-des]');if(dz){post('/api/desafio',{id:dz.dataset.des,hecho:dz.dataset.v==='1'});return}
  const oc=e.target.closest('[data-ocultar]');if(oc){post('/api/luis',{tipo:'ocultar',id:oc.dataset.ocultar,oculto:oc.dataset.v==='1'});return}
  const a1=e.target.closest('[data-act="copyAmigos"]');if(a1){const i=$('amigosLink');try{await navigator.clipboard.writeText(i.value);setBanner('Enlace copiado.')}catch(_){i.select();setBanner('Selecciona el enlace y cópialo.')}return}
  const a0=e.target.closest('[data-act]');if(a0&&a0.dataset.act==='resumen'){const ok=await post('/api/luis',{tipo:'resumen',text:$('resumen').value});if(ok)setBanner('Carta guardada.');return}
@@ -383,7 +396,9 @@ document.addEventListener('input',e=>{const id=e.target.id;
  if(id.startsWith('nc-')||id.startsWith('np-')||id.startsWith('ns-')){const k=id.slice(3);notaDrafts[k]={carta:$('nc-'+k).value,pista:$('np-'+k).value,cancion:$('ns-'+k).value};return}
  if(!openKey)return;
  if(id==='note'||id==='exp'){(id==='note'?drafts:expDrafts)[openKey]=e.target.value;const s=$('saved');s&&(s.textContent='Sin guardar')}});
-document.addEventListener('change',async e=>{if(e.target.id!=='file'||!openKey)return;const k=openKey;const files=[...e.target.files];if(!files.length)return;
+document.addEventListener('change',async e=>{const dfid=e.target.dataset&&e.target.dataset.desfoto;
+ if(dfid){const f=e.target.files[0];if(!f)return;setBanner('Subiendo foto…');try{const blob=await compress(f);S=await api('/api/desafio/foto?id='+encodeURIComponent(dfid),{method:'POST',headers:{'content-type':blob.type||'image/jpeg'},body:blob});setBanner('¡Desafío cumplido!');render()}catch(err){if(err.message!=='auth')setBanner(ERR[err.message]||'La foto no se pudo subir.')}return}
+ if(e.target.id!=='file'||!openKey)return;const k=openKey;const files=[...e.target.files];if(!files.length)return;
  const up=()=>$('up');let ok=0;
  for(let i=0;i<files.length;i++){up()&&(up().textContent=`Subiendo ${i+1} de ${files.length}…`);
   try{const blob=await compress(files[i]);S=await api('/api/foto?dia='+k,{method:'POST',headers:{'content-type':blob.type||'image/jpeg'},body:blob});ok++}
