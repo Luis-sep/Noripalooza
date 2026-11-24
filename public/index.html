@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Noripalooza · Tu festival</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Noripalooza">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F6EEDC">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -154,6 +161,9 @@ select.inp{appearance:auto}
 .teaser{margin-top:16px;border-radius:18px;padding:16px 18px;background:var(--gold);color:#1B1B1B;display:flex;gap:14px;align-items:center}
 .teaser b{flex:none;font-family:Bungee,sans-serif;font-weight:400;font-size:34px;line-height:1;min-width:44px;text-align:center}
 .teaser p{margin:0;font-weight:500}
+.instalar{margin-top:16px;background:var(--card);border:2px dashed var(--forest);border-radius:18px;padding:14px 16px}
+.instalar b{color:var(--forest)}
+.instalar ol{margin:8px 0 0;padding-left:20px}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -177,6 +187,7 @@ select.inp{appearance:auto}
 <div id="app" hidden>
 <section id="panel"></section>
 <section class="hero" id="hero" aria-live="polite"></section>
+<section id="instalar"></section>
 <section id="msgs"></section>
 <h3 class="sec">Line-up</h3>
 <div class="list" id="list"></div>
@@ -385,7 +396,12 @@ function bienvenida(){openKey=null;
  <div class="row"><button class="btn" data-close>Empezar</button></div>`;
  $('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
 
-function render(){if(!S)return;renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
+function renderInstalar(){const el=$('instalar');
+ const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);const app=window.navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
+ if(!ios||app||isLuis()||lsGet('nori_instalar_no')==='1'){el.innerHTML='';return}
+ el.innerHTML=`<div class="instalar"><b>Tip: tenla como app en tu iPhone</b><ol><li>Toca el botón <b>Compartir</b> de Safari (el cuadrado con la flecha hacia arriba; si no lo ves, toca <b>···</b>).</li><li>Elige <b>Agregar a pantalla de inicio</b> y toca <b>Agregar</b>.</li><li>Abre la Noripalooza desde el ícono nuevo y entra con tu clave una vez más.</li></ol><div class="row"><button class="link" data-act="noInstalar">Ya lo hice / no mostrar más</button></div></div>`}
+
+function render(){if(!S)return;renderInstalar();renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
 function closeSheet(){openKey=null;$('overlay').hidden=true}
 
@@ -403,6 +419,7 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  if(g&&g.dataset.act==='old'){showOld=!showOld;renderMsgs();return}
  if(g&&g.dataset.act==='secreto'){secretOpen=true;renderSecreto();return}
  if(g&&g.dataset.act==='verConfeti'){confetti();return}
+ if(g&&g.dataset.act==='noInstalar'){lsSet('nori_instalar_no','1');renderInstalar();return}
  if(g&&g.dataset.act==='vistaNori'){vistaNori();return}
  if(g&&g.dataset.act==='enviarMsg'){const t=$('nuevoMsg').value.trim();if(!t)return;if(await post('/api/luis',{tipo:'mensaje',text:t})){setBanner('Mensaje enviado.')}return}
  if(g&&g.dataset.act==='guardarSecreto'){if(await post('/api/luis',{tipo:'secreto',text:$('secretoTxt').value}))setBanner('Sobre secreto guardado.');return}
