@@ -11,8 +11,8 @@ export async function onRequestPost({ request, env, data }) {
     if (!d) return json({ error: 'dia' }, 404);
     const carta = typeof body.carta === 'string' ? body.carta.slice(0, 2000) : d.carta;
     const pista = typeof body.pista === 'string' ? body.pista.slice(0, 1000) : '';
-    const m = typeof body.cancion === 'string' ? body.cancion.match(/track[/:]([A-Za-z0-9]{22})/) : null;
-    const spotify = m ? m[1] : null;
+    const m = typeof body.cancion === 'string' ? body.cancion.match(/(track|playlist|album)[/:]([A-Za-z0-9]{22})/) : null;
+    const spotify = m ? m[1] + ':' + m[2] : null;
     if (typeof body.cancion === 'string' && body.cancion.trim() && !spotify) return json({ error: 'cancion' }, 400);
     await env.NORI_KV.put('nota:' + d.k, JSON.stringify({ carta, pista, spotify }));
   } else if (body.tipo === 'resumen') {
