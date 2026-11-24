@@ -134,6 +134,8 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .party canvas{position:absolute;inset:0;width:100%;height:100%}
 .party h2{position:relative;font-family:Bungee,sans-serif;font-weight:400;color:#FFF8EE;font-size:clamp(40px,11vw,88px);line-height:1;text-align:center;margin:0;padding:0 16px;text-wrap:balance}
 .party p{position:relative;color:#FFF8EE;text-align:center;margin:12px 0 0;font-weight:700}
+.sp{width:100%;border:0;border-radius:14px;margin:4px 0 6px;display:block}
+.hero .sp{clear:both;margin-top:14px}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -190,7 +192,7 @@ const drafts={},expDrafts={},notaDrafts={};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const setBanner=t=>{$('banner').textContent=t};
-const ERR={'sin-pases':'Ya usaste tus 2 pases libres.','bloqueado':'Ese sobre todavía no se abre.','tamano':'La foto es muy grande.','tipo':'Ese archivo no es una foto.','ya-sellada':'La cápsula ya está sellada.','vacia':'Escribe algo antes de sellar.'};
+const ERR={'cancion':'Ese enlace no es de una canción de Spotify. En Spotify toca Compartir → Copiar enlace de la canción.','sin-pases':'Ya usaste tus 2 pases libres.','bloqueado':'Ese sobre todavía no se abre.','tamano':'La foto es muy grande.','tipo':'Ese archivo no es una foto.','ya-sellada':'La cápsula ya está sellada.','vacia':'Escribe algo antes de sellar.'};
 const isLuis=()=>S&&S.role==='luis';
 const data=k=>(S&&S.progreso[k])||{};
 const dayOf=k=>S.days.find(d=>d.k===k);
@@ -230,7 +232,7 @@ function renderHero(){const h=$('hero');const first=S.days[0].date,last=S.days[S
  if(t<first){const n=Math.round((Date.parse(first)-Date.parse(t))/864e5);body=`<p class="k">Tu festival empieza pronto</p><h2>Faltan ${n} ${n===1?'día':'días'}</h2><p>El viernes 27 se abre tu primer sobre.</p>`}
  else if(t>last){body=`<p class="k">El festival terminó</p><h2>Lo que creaste se queda contigo</h2><p>Revive cada día en el álbum.</p><div class="row"><button class="btn light" data-open="d06">Ver mi cierre</button></div>`}
  else{const d=S.days.find(x=>x.date===t)||S.days[0];const x=data(d.k);
-  body=`<p class="k">Hoy · ${d.dow} ${d.n} ${d.m}</p><h2>${esc(d.t)}</h2><p>${esc(d.s)}</p><div class="row"><button class="btn light" data-open="${d.k}">${x.opened||isLuis()?'Ver el sobre de hoy':'Abrir el sobre de hoy'}</button></div>`}
+  body=`<p class="k">Hoy · ${d.dow} ${d.n} ${d.m}</p><h2>${esc(d.t)}</h2><p>${esc(d.s)}</p><div class="row"><button class="btn light" data-open="${d.k}">${x.opened||isLuis()?'Ver el sobre de hoy':'Abrir el sobre de hoy'}</button></div>${d.spotify?spEmbed(d.spotify):''}`}
  const av=AVA[avatarFor(t)];h.innerHTML=`<img class="ava" src="${av[1]}" alt="${av[0]}">`+body+`<div class="stamps" aria-label="${doneN} de 10 retos cumplidos">${stamps}</div><p class="k" style="margin-top:8px">${doneN} de 10 retos · ${PASSES-passesUsed()} pases libres</p>`}
 
 function renderList(){$('list').innerHTML=S.days.map(d=>{const[s,c]=status(d);
@@ -242,7 +244,7 @@ function renderAlbum(){const all=[];S.days.forEach(d=>(data(d.k).photos||[]).for
 
 function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
  const rows=S.days.map(d=>{const x=data(d.k);return`<tr><td>${d.dow} ${d.n}</td><td>${esc(d.t)}</td><td>${x.opened?'Sí':'No'}</td><td>${x.pass?'Pase libre':x.done?'Cumplido':'—'}</td><td>${esc(x.mood||'—')}</td><td>${esc(x.cumplio||'—')}</td><td>${(x.photos||[]).length}</td></tr>`}).join('');
- const notas=S.days.map(d=>`<div class="nedit"><b>${d.dow} ${d.n} · ${esc(d.t)}</b><label class="lbl" for="nc-${d.k}" style="margin:0 0 4px">Tu nota</label><textarea id="nc-${d.k}">${esc(notaDrafts[d.k]?.carta??d.carta??'')}</textarea><label class="lbl" for="np-${d.k}" style="margin:8px 0 4px">Pista del regalo (opcional)</label><input class="inp" id="np-${d.k}" value="${esc(notaDrafts[d.k]?.pista??d.pista??'')}"><div class="row"><button class="btn ghost" data-nota="${d.k}">Guardar nota</button></div></div>`).join('');
+ const notas=S.days.map(d=>`<div class="nedit"><b>${d.dow} ${d.n} · ${esc(d.t)}</b><label class="lbl" for="nc-${d.k}" style="margin:0 0 4px">Tu nota</label><textarea id="nc-${d.k}">${esc(notaDrafts[d.k]?.carta??d.carta??'')}</textarea><label class="lbl" for="np-${d.k}" style="margin:8px 0 4px">Pista del regalo (opcional)</label><input class="inp" id="np-${d.k}" value="${esc(notaDrafts[d.k]?.pista??d.pista??'')}"><label class="lbl" for="ns-${d.k}" style="margin:8px 0 4px">Canción del día (enlace de Spotify)</label><input class="inp" id="ns-${d.k}" placeholder="${esc(d.c+' · '+d.a)}" value="${esc(notaDrafts[d.k]?.cancion??(d.spotify?'https://open.spotify.com/track/'+d.spotify:''))}"><div class="row"><button class="btn ghost" data-nota="${d.k}">Guardar nota</button></div></div>`).join('');
  el.innerHTML=`<h3 class="sec" style="margin-top:20px">Panel de Luis</h3><p class="saved">Ves cómo va Nori sin leer lo que escribe: eso queda para ella. Puedes abrir cualquier sobre para revisarlo.</p>
  <div class="scroll"><table class="ptable"><thead><tr><th>Día</th><th>Sobre</th><th>Abierto</th><th>Reto</th><th>Ánimo</th><th>¿Se cumplió?</th><th>Fotos</th></tr></thead><tbody>${rows}</tbody></table></div>
   <section class="extra"><h3>Mensajes para Nori</h3><p class="saved">Lo que escribas aquí le aparece arriba en la app, como "Un mensaje de Luis".</p><textarea id="nuevoMsg" placeholder="Pensando en ti…"></textarea><div class="row"><button class="btn" data-act="enviarMsg">Enviar mensaje</button></div>${(S.mensajes||[]).map(m=>`<div class="nedit"><small class="saved">${fmt(m.at)}</small><p style="margin:4px 0 0;white-space:pre-wrap">${esc(m.text)}</p><div class="row"><button class="btn ghost" data-borrar="${esc(m.id)}">Borrar</button></div></div>`).join('')}</section>
@@ -253,6 +255,10 @@ function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
  <p class="saved">Cápsula del tiempo: ${S.capsula.sealedAt?'sellada':'todavía no la escribe'}.</p></section>`}
 
 const ENV=`<svg class="env" id="env" viewBox="0 0 300 220" aria-hidden="true"><rect class="card" x="40" y="60" width="220" height="130" rx="8" fill="var(--card)" stroke="var(--line)" stroke-width="3"/><rect x="10" y="40" width="280" height="170" rx="14" fill="var(--terra)"/><path d="M10 200 L150 120 L290 200" fill="none" stroke="#FFF8EE" stroke-opacity=".35" stroke-width="4"/><path class="flap" d="M10 54 Q10 40 24 40 L276 40 Q290 40 290 54 L150 140 Z" fill="var(--forest)"/><circle cx="150" cy="128" r="16" fill="var(--gold)"/></svg>`;
+
+const spEmbed=id=>`<iframe class="sp" title="Canción del día en Spotify" src="https://open.spotify.com/embed/track/${encodeURIComponent(id)}?utm_source=generator&theme=0" height="152" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+function songHtml(d){if(d.spotify)return`<span class="lbl">Canción del día</span>${spEmbed(d.spotify)}`;
+ return`<a class="song" href="https://open.spotify.com/search/${encodeURIComponent(d.c+' '+d.a)}" target="_blank" rel="noopener"><span>Canción del día · abrir en Spotify</span><b>${esc(d.c)}</b> ${esc(d.a)}</a>`}
 
 function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
 
@@ -280,7 +286,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
   h+=`<p class="reto">${esc(d.r)}</p>`;
   if(d.carta)h+=`<p class="carta"><b>Una nota de Luis:</b> ${esc(d.carta)}</p>`;
   if(d.pista)h+=`<p class="carta"><b>Pista de tu regalo:</b> ${esc(d.pista)}</p>`;
-  h+=`<a class="song" href="https://open.spotify.com/search/${encodeURIComponent(d.c+' '+d.a)}" target="_blank" rel="noopener"><span>Canción del día · abrir en Spotify</span><b>${esc(d.c)}</b> ${esc(d.a)}</a>`;
+  h+=songHtml(d);
   if(!ro){
    h+=`<label class="lbl" for="exp">¿Qué esperas de hoy?</label><input class="inp" id="exp" value="${esc(expDrafts[d.k]??x.expectativa??'')}" placeholder="Una frase basta">`;
    h+=`<span class="lbl" id="mood-l">¿Cómo te sentiste hoy?</span><div class="chips" role="group" aria-labelledby="mood-l">${MOODS.map(m=>`<button class="chip" data-mood="${m}" aria-pressed="${x.mood===m}">${m}</button>`).join('')}</div>`;
@@ -331,7 +337,7 @@ async function compress(file){try{const bmp=await createImageBitmap(file);const 
 document.addEventListener('click',async e=>{
  const o=e.target.closest('[data-open]');if(o){openSheet(o.dataset.open);return}
  if(e.target.closest('[data-close]')||e.target.id==='overlay'){closeSheet();return}
- const nb=e.target.closest('[data-nota]');if(nb){const k=nb.dataset.nota;const ok=await post('/api/luis',{tipo:'nota',k,carta:$('nc-'+k).value,pista:$('np-'+k).value});if(ok){delete notaDrafts[k];setBanner('Nota guardada.');render()}return}
+ const nb=e.target.closest('[data-nota]');if(nb){const k=nb.dataset.nota;const ok=await post('/api/luis',{tipo:'nota',k,carta:$('nc-'+k).value,pista:$('np-'+k).value,cancion:$('ns-'+k).value});if(ok){delete notaDrafts[k];setBanner('Nota guardada.');render()}return}
 if(e.target.closest('#party')){$('party').hidden=true;return}
  const bo=e.target.closest('[data-borrar]');if(bo){post('/api/luis',{tipo:'borrarMensaje',id:bo.dataset.borrar});return}
  const g=e.target.closest('[data-act]');
@@ -356,7 +362,7 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
 });
 document.addEventListener('input',e=>{const id=e.target.id;
  if(id==='cap'){capDraft=e.target.value;return}
- if(id.startsWith('nc-')||id.startsWith('np-')){const k=id.slice(3);notaDrafts[k]={carta:$('nc-'+k).value,pista:$('np-'+k).value};return}
+ if(id.startsWith('nc-')||id.startsWith('np-')||id.startsWith('ns-')){const k=id.slice(3);notaDrafts[k]={carta:$('nc-'+k).value,pista:$('np-'+k).value,cancion:$('ns-'+k).value};return}
  if(!openKey)return;
  if(id==='note'||id==='exp'){(id==='note'?drafts:expDrafts)[openKey]=e.target.value;const s=$('saved');s&&(s.textContent='Sin guardar')}});
 document.addEventListener('change',async e=>{if(e.target.id!=='file'||!openKey)return;const k=openKey;const files=[...e.target.files];if(!files.length)return;
