@@ -6,7 +6,8 @@ export async function onRequestGet({ request, env, params }) {
   if (!value) return new Response('No encontrada', { status: 404 });
   const ct = metadata?.ct || 'image/jpeg';
   const total = value.byteLength;
-  const base = { 'content-type': ct, 'accept-ranges': 'bytes', 'cache-control': 'private, max-age=31536000, immutable' };
+  const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : ct.includes('quicktime') ? 'mov' : ct.includes('webm') ? 'webm' : ct.includes('mp4') ? 'mp4' : 'jpg';
+  const base = { 'content-type': ct, 'accept-ranges': 'bytes', 'cache-control': 'private, max-age=31536000, immutable', 'content-disposition': `inline; filename="noripalooza-${params.id.slice(0, 8)}.${ext}"` };
 
   const range = request.headers.get('range');
   const m = range && range.match(/^bytes=(\d*)-(\d*)$/);
