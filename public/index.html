@@ -147,6 +147,7 @@ select.inp{appearance:auto}
 .des b{color:var(--forest)}.des p{margin:6px 0 0;font-size:17px}
 .insignias{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .insignias span{width:30px;height:30px;border-radius:50%;background:var(--gold);display:grid;place-items:center;color:#1B1B1B;font-weight:700;font-size:15px}
+.frase{font-size:18px;font-style:italic;color:var(--forest);margin:0 0 12px;text-wrap:balance}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -318,6 +319,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
  else if(!x.opened&&!ro){h+=ENV+`<div class="row" style="justify-content:center"><button class="btn" data-act="open">Abrir sobre</button></div>`}
  else{
   if(ro)h+=`<p class="saved">Vista de Luis: así lo verá Nori.</p>`;
+  if(d.f)h+=`<p class="frase">“${esc(d.f)}”</p>`;
   h+=`<p class="reto">${esc(d.r)}</p>`;
   if(d.carta)h+=`<p class="carta"><b>Una nota de Luis:</b> ${esc(d.carta)}</p>`;
   if(d.pista)h+=`<p class="carta"><b>Pista de tu regalo:</b> ${esc(d.pista)}</p>`;
