@@ -103,7 +103,9 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .card h2{font-family:Bungee,sans-serif;font-weight:400;font-size:26px;line-height:1.1;color:var(--terra);margin:0 0 10px;text-wrap:balance}
 .card form{display:flex;flex-direction:column;gap:6px}
 .secret{background:var(--forest);color:var(--on);border-radius:14px;padding:12px 14px;margin:14px 0 4px;font-weight:500}
-.prev{display:block;max-width:100%;max-height:260px;border-radius:12px;margin-top:8px}
+.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+.thumbs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.saved{color:var(--muted);font-size:14px;margin:4px 0 0}
 .err{color:var(--terra);font-weight:700;margin:6px 0 0}
 </style>
 </head>
@@ -121,9 +123,12 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <input class="inp" id="nombre" maxlength="60" autocomplete="name" required>
 <label class="lbl" for="mensaje">Tu mensaje para Nori</label>
 <textarea id="mensaje" maxlength="3000" required placeholder="Un recuerdo con ella, algo que admiras de ella, un deseo para este año…"></textarea>
-<span class="lbl">Una foto con ella (opcional)</span>
-<div class="row"><label class="btn ghost" for="foto">Elegir foto</label><input class="sr" type="file" id="foto" accept="image/*"><button class="link" type="button" id="quitar" hidden>Quitar foto</button></div>
-<img class="prev" id="prev" alt="Vista previa de tu foto" hidden>
+<span class="lbl">Fotos con ella (opcional, hasta 3)</span>
+<div class="row"><label class="btn ghost" for="fotos">Elegir fotos</label><input class="sr" type="file" id="fotos" accept="image/*" multiple><button class="link" type="button" id="quitarFotos" hidden>Quitar fotos</button></div>
+<div class="thumbs" id="thumbs"></div>
+<span class="lbl">Un video corto (opcional, 15 a 20 segundos)</span>
+<div class="row"><label class="btn ghost" for="video">Elegir video</label><input class="sr" type="file" id="video" accept="video/*"><button class="link" type="button" id="quitarVideo" hidden>Quitar video</button></div>
+<p class="saved" id="videoInfo"></p>
 <div class="row" style="margin-top:18px"><button class="btn" type="submit" id="enviar">Enviar mensaje</button></div>
 <p class="err" id="err" role="alert"></p>
 </form>
@@ -131,7 +136,7 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 
 <section class="card" id="okCard" hidden>
 <h2>¡Gracias!</h2>
-<p>Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.</p>
+<p id="okMsg">Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.</p>
 <div class="row"><button class="btn ghost" id="otro">Escribir otro mensaje</button></div>
 </section>
 <p class="foot">Una sorpresa de Luis para Nori.</p>
@@ -139,23 +144,38 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <script>
 {
 const $=id=>document.getElementById(id);
-let foto=null;
-async function compress(file){const bmp=await createImageBitmap(file);const sc=Math.min(1,1400/Math.max(bmp.width,bmp.height));
+const MAXV=24*1024*1024;
+let fotos=[],video=null;
+async function compress(file){const bmp=await createImageBitmap(file);const sc=Math.min(1,1600/Math.max(bmp.width,bmp.height));
  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
- return c.toDataURL('image/jpeg',.8)}
-$('foto').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;$('err').textContent='';
- try{foto=await compress(f);$('prev').src=foto;$('prev').hidden=false;$('quitar').hidden=false}catch(_){foto=null;$('err').textContent='No pudimos leer esa foto. Prueba con otra.'}});
-$('quitar').addEventListener('click',()=>{foto=null;$('foto').value='';$('prev').hidden=true;$('quitar').hidden=true});
+ return await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('foto')),'image/jpeg',.82))}
+function videoType(f){if(/^video\/(mp4|quicktime|webm)$/.test(f.type))return f.type;const n=f.name.toLowerCase();if(n.endsWith('.mov'))return'video/quicktime';if(n.endsWith('.webm'))return'video/webm';return'video/mp4'}
+const mb=n=>(n/1048576).toFixed(1).replace('.',',')+' MB';
+function drawThumbs(){$('thumbs').innerHTML='';fotos.forEach(b=>{const i=document.createElement('img');i.alt='Foto elegida';i.src=URL.createObjectURL(b);$('thumbs').appendChild(i)});$('quitarFotos').hidden=!fotos.length}
+$('fotos').addEventListener('change',async e=>{$('err').textContent='';const files=[...e.target.files].slice(0,3);
+ if(e.target.files.length>3)$('err').textContent='Solo se pueden enviar 3 fotos: tomamos las primeras 3.';
+ fotos=[];for(const f of files){try{fotos.push(await compress(f))}catch(_){$('err').textContent='No pudimos leer una de las fotos. Prueba con otra.'}}drawThumbs()});
+$('quitarFotos').addEventListener('click',()=>{fotos=[];$('fotos').value='';drawThumbs()});
+$('video').addEventListener('change',e=>{$('err').textContent='';const f=e.target.files[0];if(!f)return;
+ if(f.size>MAXV){video=null;$('video').value='';$('videoInfo').textContent='';$('err').textContent=`El video pesa ${mb(f.size)} y el máximo es 24 MB. Graba uno de 15 a 20 segundos, o en menor calidad, y vuelve a intentarlo.`;return}
+ video=f;$('videoInfo').textContent=`Video listo: ${f.name} (${mb(f.size)})`;$('quitarVideo').hidden=false});
+$('quitarVideo').addEventListener('click',()=>{video=null;$('video').value='';$('videoInfo').textContent='';$('quitarVideo').hidden=true});
+async function upload(id,token,blob,type,label){const b=$('enviar');b.textContent=label;
+ const r=await fetch(`/api/amigos/media?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`,{method:'POST',headers:{'content-type':type},body:blob});
+ if(!r.ok)throw new Error('media')}
 $('f').addEventListener('submit',async e=>{e.preventDefault();$('err').textContent='';
  const nombre=$('nombre').value.trim(),mensaje=$('mensaje').value.trim();
  if(!nombre||!mensaje){$('err').textContent='Escribe tu nombre y tu mensaje.';return}
- const b=$('enviar');b.disabled=true;b.textContent='Enviando…';
- try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje,foto})});
-  if(!r.ok)throw new Error();
+ const b=$('enviar');b.disabled=true;b.textContent='Enviando mensaje…';let fallos=0;
+ try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje})});
+  if(!r.ok)throw new Error();const{id,token}=await r.json();
+  for(let i=0;i<fotos.length;i++){try{await upload(id,token,fotos[i],'image/jpeg',`Subiendo foto ${i+1} de ${fotos.length}…`)}catch(_){fallos++}}
+  if(video){try{await upload(id,token,video,videoType(video),'Subiendo video… puede tardar un poco')}catch(_){fallos++}}
+  $('okMsg').textContent=fallos?`Tu mensaje quedó guardado, pero ${fallos===1?'un archivo no se pudo subir':fallos+' archivos no se pudieron subir'}. Puedes enviar otro mensaje con lo que faltó.`:'Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.';
   $('formCard').hidden=true;$('okCard').hidden=false}
  catch(_){$('err').textContent='No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.'}
  finally{b.disabled=false;b.textContent='Enviar mensaje'}});
-$('otro').addEventListener('click',()=>{$('mensaje').value='';foto=null;$('foto').value='';$('prev').hidden=true;$('quitar').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
+$('otro').addEventListener('click',()=>{$('mensaje').value='';fotos=[];video=null;$('fotos').value='';$('video').value='';drawThumbs();$('videoInfo').textContent='';$('quitarVideo').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
 }
 </script>
 </body>

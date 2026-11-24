@@ -109,7 +109,8 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .amigo{background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:14px;margin-top:10px}
 .amigo b{display:block;color:var(--forest);margin-bottom:4px}
 .amigo p{margin:0;white-space:pre-wrap}
-.amigo img{display:block;width:100%;max-height:340px;object-fit:cover;border-radius:12px;margin-top:10px}
+.amigo img,.amigo video{display:block;width:100%;max-height:420px;object-fit:cover;border-radius:12px;margin-top:10px;background:#000}
+.amigo video{object-fit:contain}
 .amigo.off{opacity:.55}
 .hero .ava{float:right;width:min(38%,170px);aspect-ratio:1;object-fit:cover;margin:0 0 8px 12px;border-radius:18px;border:3px solid var(--on)}
 .versiones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
@@ -255,7 +256,7 @@ const ENV=`<svg class="env" id="env" viewBox="0 0 300 220" aria-hidden="true"><r
 
 function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
 
-function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${a.fotoId?`<img src="/api/foto/${encodeURIComponent(a.fotoId)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`:''}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button></div>`:''}</div>`).join('')}
+function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${(a.media||[]).map(m=>m.tipo==='video'?`<video controls playsinline preload="metadata" src="/api/foto/${encodeURIComponent(m.id)}"></video>`:`<img src="/api/foto/${encodeURIComponent(m.id)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`).join('')}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button></div>`:''}</div>`).join('')}
 
 function extrasHtml(ro){let h=`<section class="extra"><h3>Tu carta del festival</h3>`;
  if(S.resumen)h+=`<div class="letter">${esc(S.resumen)}</div>`;

@@ -4,7 +4,7 @@ import { json, getCookie, roleFor } from '../../lib/util.js';
 export async function onRequest(ctx) {
   const url = new URL(ctx.request.url);
   if (url.pathname === '/api/login') return ctx.next();
-  if (url.pathname === '/api/amigos' && ctx.request.method === 'POST') {
+  if ((url.pathname === '/api/amigos' || url.pathname === '/api/amigos/media') && ctx.request.method === 'POST') {
     if (!ctx.env.NORI_KV) return json({ error: 'kv' }, 500);
     return ctx.next();
   }

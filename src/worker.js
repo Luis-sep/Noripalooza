@@ -9,6 +9,7 @@ import * as fotoGet from '../functions/api/foto/[id].js';
 import * as capsula from '../functions/api/capsula.js';
 import * as luis from '../functions/api/luis.js';
 import * as amigos from '../functions/api/amigos.js';
+import * as amigosMedia from '../functions/api/amigos/media.js';
 import { json, getCookie, roleFor } from '../lib/util.js';
 
 const routes = [
@@ -20,6 +21,7 @@ const routes = [
   ['/api/capsula', capsula],
   ['/api/luis', luis],
   ['/api/amigos', amigos],
+  ['/api/amigos/media', amigosMedia],
 ];
 
 const handlerFor = (mod, method) =>
