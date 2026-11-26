@@ -164,6 +164,11 @@ select.inp{appearance:auto}
 .instalar{margin-top:16px;background:var(--card);border:2px dashed var(--forest);border-radius:18px;padding:14px 16px}
 .instalar b{color:var(--forest)}
 .instalar ol{margin:8px 0 0;padding-left:20px}
+.tour{position:fixed;left:12px;right:12px;bottom:12px;max-width:560px;margin:0 auto;z-index:15;background:var(--card);border:3px solid var(--gold);border-radius:20px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.tour[hidden]{display:none}
+.tour h3{font-family:Bungee,sans-serif;font-weight:400;font-size:22px;color:var(--terra);margin:2px 0 6px}
+.tour p{margin:0}.tour .tk{font-size:13px;font-weight:700;color:var(--forest)}
+.tour-hl{outline:4px solid var(--gold);outline-offset:6px;border-radius:18px}
 .link{all:unset;cursor:pointer;text-decoration:underline;color:var(--muted)}
 </style>
 </head>
@@ -203,6 +208,7 @@ select.inp{appearance:auto}
 </main>
 
 <div class="party" id="party" hidden role="dialog" aria-label="Feliz cumpleaños"><canvas id="confetti" aria-hidden="true"></canvas><div><h2>¡Feliz cumpleaños, Nori!</h2><p>Toca para entrar a tu día</p></div></div>
+<div class="tour" id="tour" hidden role="dialog" aria-live="polite" aria-label="Paseo por la app"><p class="tk" id="tourN"></p><h3 id="tourT"></h3><p id="tourX"></p><div class="row"><button class="btn" id="tourNext">Siguiente</button><button class="link" id="tourSkip">Saltar</button></div></div>
 <div class="overlay" id="overlay" hidden>
 <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet"></div>
 </div>
@@ -341,7 +347,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
    h+=`<span class="lbl" id="mood-l">¿Cómo te sentiste hoy?</span><div class="chips" role="group" aria-labelledby="mood-l">${MOODS.map(m=>`<button class="chip" data-mood="${m}" aria-pressed="${x.mood===m}">${m}</button>`).join('')}</div>`;
    h+=`<span class="lbl" id="cum-l">¿Se cumplió lo que esperabas?</span><div class="chips" role="group" aria-labelledby="cum-l">${CUMPLIO.map(m=>`<button class="chip" data-cum="${m}" aria-pressed="${x.cumplio===m}">${m}</button>`).join('')}</div>`;
    h+=`<label class="lbl" for="note">Lo que descubrí hoy</label><textarea id="note" placeholder="Escribe aquí tu respuesta al reto…">${esc(drafts[d.k]??x.note??'')}</textarea><div class="row"><button class="btn ghost" data-act="save">Guardar</button><span class="saved" id="saved"></span></div>`}
-  h+=`<span class="lbl">Fotos del día</span><div class="row"><label class="btn ghost" for="file">Agregar fotos</label><input class="sr" type="file" id="file" accept="image/*" multiple><span class="saved" id="up"></span></div>`;
+  h+=`<span class="lbl">Fotos del día</span>${d.foto?`<p class="saved" style="margin:-4px 0 8px">Idea: ${esc(d.foto)}</p>`:''}<div class="row"><label class="btn ghost" for="file">Agregar fotos</label><input class="sr" type="file" id="file" accept="image/*" multiple><span class="saved" id="up"></span></div>`;
   const ph=x.photos||[];
   if(ph.length)h+=`<div class="photos">${ph.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Foto del día" loading="lazy">`).join('')}</div>`;
   if(!ro){h+=`<div class="row" style="margin-top:22px"><button class="btn" data-act="done" ${x.pass?'disabled':''}>${x.done?'Reto cumplido ✓':'Marcar reto cumplido'}</button>`;
@@ -392,14 +398,34 @@ function bienvenida(){openKey=null;
  <h2 id="sheet-title">Bienvenida al Festival de Creer y Crear</h2>
  <p class="reto">Durante diez días todo gira en torno a ti: tu creatividad, tu brillo y la gente que te quiere. Cada día se abre un sobre con un pequeño reto. No hay forma correcta de hacerlo; solo hay que jugar.</p>
  <div class="rank"><div><span><b>1.</b> Abre tu sobre cada día.</span></div><div><span><b>2.</b> Lleva una libreta o escribe aquí lo que descubras.</span></div><div><span><b>3.</b> Tienes 2 pases libres para saltarte un reto.</span></div><div><span><b>4.</b> Prohibido exigirte perfección.</span></div></div>
+ <p class="reto" style="margin-top:14px"><b>Saca muchas fotos</b> durante estos días y súbelas en el sobre de cada día: se van juntando en tu álbum.</p>
  <p class="carta" style="margin-top:16px"><b>Con amor, Luis</b></p>
- <div class="row"><button class="btn" data-close>Empezar</button></div>`;
+ <div class="row"><button class="btn" data-act="tour">Ver cómo funciona</button><button class="btn ghost" data-close>Ya entendí</button></div>`;
  $('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
 
 function renderInstalar(){const el=$('instalar');
  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);const app=window.navigator.standalone===true||matchMedia('(display-mode: standalone)').matches;
  if(!ios||app||isLuis()||lsGet('nori_instalar_no')==='1'){el.innerHTML='';return}
  el.innerHTML=`<div class="instalar"><b>Tip: tenla como app en tu iPhone</b><ol><li>Toca el botón <b>Compartir</b> de Safari (el cuadrado con la flecha hacia arriba; si no lo ves, toca <b>···</b>).</li><li>Elige <b>Agregar a pantalla de inicio</b> y toca <b>Agregar</b>.</li><li>Abre la Noripalooza desde el ícono nuevo y entra con tu clave una vez más.</li></ol><div class="row"><button class="link" data-act="noInstalar">Ya lo hice / no mostrar más</button></div></div>`}
+
+const TOUR=[
+ ['#hero','Tu día','Aquí arriba ves el día de hoy. Cuando sea el día, toca el botón para abrir tu sobre. Y fíjate en tu imagen: va cambiando durante el festival.'],
+ ['#list','Line-up','Los 10 días del festival. Cada sobre se abre en su día y trae una frase, un reto, una nota de Luis y la canción del día.'],
+ ['#list','Dentro de cada sobre','Escribe qué esperas del día, marca cómo te sentiste, cuenta lo que descubriste y sube las fotos del día. Cuando termines, marca el reto como cumplido o usa uno de tus 2 pases libres.'],
+ ['#list','Desafíos de tus amigos','Desde el viernes, cada día aparece un desafío que te dejó alguien que te quiere. Cúmplelos cuando quieras y sube una foto de prueba.'],
+ ['#secreto','Sobre secreto','Completa los 10 retos (los pases libres cuentan) y se abre un sobre secreto con un premio.'],
+ ['#album','Tu álbum','Todas las fotos que subas se juntan aquí. Al final del festival vas a tener el recuerdo completo.'],
+ ['#como','Cómo funciona','Si se te olvida algo, aquí vuelves a ver la bienvenida y este paseo. ¡A disfrutar tu Noripalooza!']];
+let tourI=-1;
+function tourShow(){document.querySelectorAll('.tour-hl').forEach(x=>x.classList.remove('tour-hl'));
+ if(tourI<0||tourI>=TOUR.length){$('tour').hidden=true;tourI=-1;return}
+ const [sel,t,x]=TOUR[tourI];const el=document.querySelector(sel);
+ if(el){const tgt=sel==='#como'?el:el;tgt.classList.add('tour-hl');tgt.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'center'})}
+ $('tourN').textContent=`${tourI+1} de ${TOUR.length}`;$('tourT').textContent=t;$('tourX').textContent=x;
+ $('tourNext').textContent=tourI===TOUR.length-1?'¡Listo!':'Siguiente';$('tour').hidden=false;$('tourNext').focus()}
+function tourStart(){closeSheet();tourI=0;tourShow()}
+$('tourNext').addEventListener('click',()=>{tourI++;tourShow()});
+$('tourSkip').addEventListener('click',()=>{tourI=-1;tourShow()});
 
 function render(){if(!S)return;renderInstalar();renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
@@ -419,6 +445,7 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  if(g&&g.dataset.act==='old'){showOld=!showOld;renderMsgs();return}
  if(g&&g.dataset.act==='secreto'){secretOpen=true;renderSecreto();return}
  if(g&&g.dataset.act==='verConfeti'){confetti();return}
+ if(g&&g.dataset.act==='tour'){tourStart();return}
  if(g&&g.dataset.act==='noInstalar'){lsSet('nori_instalar_no','1');renderInstalar();return}
  if(g&&g.dataset.act==='vistaNori'){vistaNori();return}
  if(g&&g.dataset.act==='enviarMsg'){const t=$('nuevoMsg').value.trim();if(!t)return;if(await post('/api/luis',{tipo:'mensaje',text:t})){setBanner('Mensaje enviado.')}return}
