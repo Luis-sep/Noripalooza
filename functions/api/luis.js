@@ -48,6 +48,17 @@ export async function onRequestPost({ request, env, data }) {
         await env.NORI_KV.put('desafios', JSON.stringify(des));
       }
     }
+  } else if (body.tipo === 'borrarMedia') {
+    const key = 'amigo:' + String(body.id || '');
+    const cur = await env.NORI_KV.get(key, 'json');
+    if (!cur) return json({ error: 'mensaje' }, 404);
+    const mid = String(body.mediaId || '');
+    const media = cur.media || (cur.fotoId ? [{ id: cur.fotoId, tipo: 'img' }] : []);
+    if (!media.some((m) => m.id === mid)) return json({ error: 'archivo' }, 404);
+    cur.media = media.filter((m) => m.id !== mid);
+    if (cur.fotoId === mid) delete cur.fotoId;
+    await env.NORI_KV.delete('foto:' + mid);
+    await env.NORI_KV.put(key, JSON.stringify(cur));
   } else if (body.tipo === 'ocultar') {
     const key = 'amigo:' + String(body.id || '');
     const cur = await env.NORI_KV.get(key, 'json');

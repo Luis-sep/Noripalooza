@@ -113,6 +113,7 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .opt:hover,.opt:focus-visible{border-color:var(--terra);outline:none}
 .saved{color:var(--muted);font-size:14px;margin:4px 0 0}
 .err{color:var(--terra);font-weight:700;margin:6px 0 0}
+.bar{height:12px;border-radius:999px;background:rgba(0,0,0,.08);overflow:hidden}#progBar{height:100%;width:0;background:var(--forest,#2f5d3a);transition:width .2s}.check{list-style:none;padding:0;margin:10px 0 0}.check li{padding:4px 0}
 </style>
 </head>
 <body>
@@ -144,12 +145,13 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 <p class="saved" id="videoInfo"></p>
 <div class="row" style="margin-top:18px"><button class="btn" type="submit" id="enviar">Enviar mensaje</button></div>
 <p class="err" id="err" role="alert"></p>
+<div id="prog" hidden><p class="saved" id="progTxt" style="margin:10px 0 6px"></p><div class="bar"><div id="progBar"></div></div><p class="saved" style="margin-top:6px">No cierres esta página hasta que termine.</p></div>
 </form>
 </section>
 
 <section class="card" id="okCard" hidden>
 <h2>¡Gracias!</h2>
-<p id="okMsg">Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.</p>
+<p id="okMsg">Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.</p><ul class="check" id="okList"></ul><div class="row" id="retryRow" hidden><button class="btn" id="retry">Volver a intentar subir lo que faltó</button></div>
 <div class="aprende" style="margin-top:14px"><p><b>¿Quieres hacer un quiz de Nori?</b></p><p>Son 5 preguntas chistosas y es opcional.</p></div>
 <div class="row"><button class="btn" id="jugar">Sí, quiero jugar</button><button class="btn ghost" id="otro">No, gracias</button></div>
 </section>
@@ -207,24 +209,39 @@ $('video').addEventListener('change',e=>{$('err').textContent='';const f=e.targe
  if(f.size>MAXV){video=null;$('video').value='';$('videoInfo').textContent='';$('err').textContent=`El video pesa ${mb(f.size)} y el máximo es 24 MB. Graba uno de 15 a 20 segundos, o en menor calidad, y vuelve a intentarlo.`;return}
  video=f;$('videoInfo').textContent=`Video listo: ${f.name} (${mb(f.size)})`;$('quitarVideo').hidden=false});
 $('quitarVideo').addEventListener('click',()=>{video=null;$('video').value='';$('videoInfo').textContent='';$('quitarVideo').hidden=true});
-async function upload(id,token,blob,type,label){const b=$('enviar');b.textContent=label;
- const r=await fetch(`/api/amigos/media?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`,{method:'POST',headers:{'content-type':type},body:blob});
- if(!r.ok)throw new Error('media')}
+function sendXHR(id,token,blob,type,label){return new Promise((res,rej)=>{const x=new XMLHttpRequest();
+ x.open('POST',`/api/amigos/media?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`);x.setRequestHeader('content-type',type);
+ x.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.round(e.loaded/e.total*100);$('progBar').style.width=p+'%';$('progTxt').textContent=`${label} ${p}%`}};
+ x.onload=()=>{if(x.status>=200&&x.status<300)res();else{let m='media';try{m=JSON.parse(x.responseText).error||m}catch(_){}rej(new Error(m))}};
+ x.onerror=()=>rej(new Error('red'));x.ontimeout=()=>rej(new Error('red'));x.timeout=10*60*1000;x.send(blob)})}
+async function upload(id,token,blob,type,label){$('prog').hidden=false;$('progBar').style.width='0%';$('progTxt').textContent=label+' 0%';$('enviar').textContent=label;
+ try{await sendXHR(id,token,blob,type,label)}catch(e){if(['tamano','tipo','max-fotos','max-video','tarde'].includes(e.message))throw e;
+  $('progTxt').textContent='Reintentando…';await new Promise(r=>setTimeout(r,1500));await sendXHR(id,token,blob,type,label+' (2.º intento)')}}
+let pend=[];
+function showResult(ok,bad){const L=$('okList');L.innerHTML=['✅ Mensaje guardado',...ok.map(t=>'✅ '+t+' subido'),...bad.map(t=>'❌ '+t+' no se pudo subir')].map(t=>`<li>${t}</li>`).join('');
+ $('okMsg').textContent=bad.length?'Tu mensaje quedó guardado, pero algo no se subió. Toca el botón para intentarlo de nuevo (puede ser la conexión; con wifi funciona mejor).':'¡Todo listo! Nori lo va a ver el día de su cumpleaños.';
+ $('retryRow').hidden=!bad.length}
+async function subirTodo(items){const ok=[],bad=[],quedan=[];
+ for(const it of items){try{await upload(sent.id,sent.token,it.blob,it.type,it.label);ok.push(it.name)}catch(_){bad.push(it.name);quedan.push(it)}}
+ $('prog').hidden=true;pend=quedan;return{ok,bad}}
 $('f').addEventListener('submit',async e=>{e.preventDefault();$('err').textContent='';
  const nombre=$('nombre').value.trim(),mensaje=$('mensaje').value.trim();
  if(!nombre||!mensaje){$('err').textContent='Escribe tu nombre y tu mensaje.';return}
  const b=$('enviar');b.disabled=true;b.textContent='Enviando mensaje…';let fallos=0;
  try{const r=await fetch('/api/amigos',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nombre,mensaje,anecdota:$('anecdota').value.trim(),desafio:$('desafio').value.trim()})});
   if(!r.ok)throw new Error();const{id,token}=await r.json();sent={id,token};
-  for(let i=0;i<fotos.length;i++){try{await upload(id,token,fotos[i],'image/jpeg',`Subiendo foto ${i+1} de ${fotos.length}…`)}catch(_){fallos++}}
-  if(video){try{await upload(id,token,video,videoType(video),'Subiendo video… puede tardar un poco')}catch(_){fallos++}}
-  $('okMsg').textContent=fallos?`Tu mensaje quedó guardado, pero ${fallos===1?'un archivo no se pudo subir':fallos+' archivos no se pudieron subir'}. Puedes enviar otro mensaje con lo que faltó.`:'Tu mensaje quedó guardado. Nori lo va a leer el día de su cumpleaños.';
+  const items=fotos.map((f,i)=>({blob:f,type:'image/jpeg',label:`Subiendo foto ${i+1} de ${fotos.length}…`,name:`Foto ${i+1}`}));
+  if(video)items.push({blob:video,type:videoType(video),label:'Subiendo video…',name:'Video'});
+  const {ok,bad}=await subirTodo(items);showResult(ok,bad);
   $('formCard').hidden=true;$('okCard').hidden=false}
  catch(_){$('err').textContent='No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.'}
- finally{b.disabled=false;b.textContent='Enviar mensaje'}});
+ finally{b.disabled=false;b.textContent='Enviar mensaje';$('prog').hidden=true}});
+$('retry').addEventListener('click',async()=>{if(!sent||!pend.length)return;const b=$('retry');b.disabled=true;b.textContent='Subiendo…';$('okCard').prepend($('prog'));
+ const prev=[...$('okList').querySelectorAll('li')].map(li=>li.textContent).filter(t=>t.startsWith('✅')&&t!=='✅ Mensaje guardado').map(t=>t.slice(2).replace(' subido',''));
+ const {ok,bad}=await subirTodo(pend);showResult([...prev,...ok],bad);b.disabled=false;b.textContent='Volver a intentar subir lo que faltó'});
 $('jugar').addEventListener('click',()=>{if(!sent)return;qi=0;resp=[];$('okCard').hidden=true;$('quizCard').hidden=false;showQ()});
 $('otro2').addEventListener('click',()=>$('otro').click());
-$('otro').addEventListener('click',()=>{$('mensaje').value='';$('anecdota').value='';$('desafio').value='';sent=null;$('quizFin').hidden=true;$('quizCard').hidden=true;fotos=[];video=null;$('fotos').value='';$('video').value='';drawThumbs();$('videoInfo').textContent='';$('quitarVideo').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
+$('otro').addEventListener('click',()=>{pend=[];$('okList').innerHTML='';$('retryRow').hidden=true;$('err').after($('prog'));$('mensaje').value='';$('anecdota').value='';$('desafio').value='';sent=null;$('quizFin').hidden=true;$('quizCard').hidden=true;fotos=[];video=null;$('fotos').value='';$('video').value='';drawThumbs();$('videoInfo').textContent='';$('quitarVideo').hidden=true;$('okCard').hidden=true;$('formCard').hidden=false});
 }
 </script>
 </body>
