@@ -104,6 +104,7 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .ptable th,.ptable td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 .ptable th{background:var(--line);font-size:14px}
 .foot{margin-top:36px;text-align:center;color:var(--muted);font-size:14px}
+.topcomo{display:flex;justify-content:flex-end;margin:0 0 10px}.comobtn{font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:999px;border:1.5px solid currentColor;background:transparent;color:inherit;cursor:pointer}
 </style>
 <style>
 .login{max-width:420px;margin:28px auto 0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
@@ -191,6 +192,7 @@ select.inp{appearance:auto}
 
 <div id="app" hidden>
 <section id="panel"></section>
+<div class="topcomo"><button class="comobtn" id="como">💡 ¿Cómo funciona?</button></div>
 <section class="hero" id="hero" aria-live="polite"></section>
 <section id="instalar"></section>
 <section id="msgs"></section>
@@ -203,7 +205,7 @@ select.inp{appearance:auto}
 <h3 class="sec">Álbum del festival</h3>
 <div id="album"></div>
 
-<p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="como">Cómo funciona</button> · <button class="link" id="logout">Salir</button></p>
+<p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="como2">Cómo funciona</button> · <button class="link" id="logout">Salir</button></p>
 </div>
 </main>
 
@@ -239,7 +241,7 @@ async function api(path,opts={}){
  return j}
 async function load(){try{S=await api('/api/estado');showApp();
  if(S.today==='2026-12-01'&&!isLuis()&&lsGet('nori_party')!=='1'){lsSet('nori_party','1');confetti()}
- else if(!isLuis()&&lsGet('nori_hola')!=='1'){lsSet('nori_hola','1');bienvenida()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
+ else if(!isLuis()&&(+lsGet('nori_hola_n')||0)<2){lsSet('nori_hola_n',String((+lsGet('nori_hola_n')||0)+1));bienvenida()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
 async function post(path,body){if(busy)return;busy=true;
  try{S=await api(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});setBanner('');render();return true}
  catch(e){if(e.message!=='auth')setBanner(ERR[e.message]||'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');return false}
@@ -252,7 +254,7 @@ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();$('loginEr
  try{const r=await fetch('/api/login',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({clave:$('clave').value})});
   if(!r.ok){$('loginErr').textContent='Esa clave no es. Inténtalo de nuevo.';return}
   $('clave').value='';await load()}catch(_){$('loginErr').textContent='No hay conexión.'}});
-$('como').addEventListener('click',()=>bienvenida());
+$('como').addEventListener('click',()=>bienvenida());$('como2').addEventListener('click',()=>bienvenida());
 $('logout').addEventListener('click',async()=>{try{await fetch('/api/login',{method:'DELETE',credentials:'same-origin'})}catch(_){}S=null;showLogin()});
 
 function status(d){const x=data(d.k);
