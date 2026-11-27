@@ -227,7 +227,7 @@ select.inp{appearance:auto}
 <h3 class="sec">Álbum del festival</h3>
 <div id="album"></div>
 
-<p class="foot">Hecho con cariño por Luis para Nori · <button class="link" id="como2">Cómo funciona</button> · <button class="link" id="logout">Salir</button></p>
+<p class="foot">Hecho con cariño por Luis para Nori · <button class="link" data-act="discurso">Bienvenida</button> · <button class="link" id="como2">Cómo funciona</button> · <button class="link" id="logout">Salir</button></p>
 </div>
 </main>
 
@@ -263,7 +263,7 @@ async function api(path,opts={}){
  return j}
 async function load(){try{S=await api('/api/estado');showApp();
  if(S.today==='2026-12-01'&&!isLuis()&&lsGet('nori_party')!=='1'){lsSet('nori_party','1');confetti()}
- else if(!isLuis()&&(+lsGet('nori_hola_n')||0)<2){lsSet('nori_hola_n',String((+lsGet('nori_hola_n')||0)+1));bienvenida()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
+ else if(!isLuis()&&(+lsGet('nori_hola_n')||0)<2){lsSet('nori_hola_n',String((+lsGet('nori_hola_n')||0)+1));discurso()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
 async function post(path,body){if(busy)return;busy=true;
  try{S=await api(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});setBanner('');render();return true}
  catch(e){if(e.message!=='auth')setBanner(ERR[e.message]||'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');return false}
@@ -449,7 +449,7 @@ function allMedia(){const out=[];
  (S.amigos||[]).forEach(a=>(a.media||[]).forEach(m=>out.push({id:m.id,tipo:m.tipo,de:a.nombre})));
  return out}
 
-function bienvenida(){openKey=null;
+function discurso(){openKey=null;
  $('sheet').innerHTML=`<div class="top"><span>Noripalooza · 27 nov — 6 dic</span><button class="close" data-close aria-label="Cerrar">×</button></div>
  <h2 id="sheet-title">Bienvenida al Festival de Creer y Crear</h2>
  <div class="discurso"><p>Nori:</p>
@@ -460,7 +460,12 @@ function bienvenida(){openKey=null;
  <p>Vas a abrir sobres, crear sin miedo, reírte, caminar, equivocarte y volver a intentar. No hay forma correcta de hacerlo; solo hay que jugar.</p>
  <p>Que empiece el Noripalooza.</p>
  <p class="firma">Atte.,<br><b>El Staff del Noripalooza</b><br>🐾 Lucas, jefe de seguridad (acepta sobornos en premios)</p></div>
- <h3 class="sec" style="margin-top:18px">Las reglas</h3>
+ <div class="row"><button class="btn" data-act="comoFunciona">Ver cómo funciona →</button></div>`;
+ $('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
+function bienvenida(){openKey=null;
+ $('sheet').innerHTML=`<div class="top"><span>Noripalooza · 27 nov — 6 dic</span><button class="close" data-close aria-label="Cerrar">×</button></div>
+ <h2 id="sheet-title">Cómo funciona</h2>
+ 
  <div class="rank"><div><span><b>1.</b> Abre tu sobre cada día.</span></div><div><span><b>2.</b> Lleva una libreta o escribe aquí lo que descubras.</span></div><div><span><b>3.</b> Tienes 2 pases libres para saltarte un reto.</span></div><div><span><b>4.</b> Los desafíos de tus amigos son bonus: hazlos solo si te dan ganas, durante todo diciembre.</span></div><div><span><b>5.</b> Prohibido exigirte perfección.</span></div></div>
  <p class="reto" style="margin-top:14px"><b>Saca muchas fotos</b> durante estos días y súbelas en el sobre de cada día: se van juntando en tu álbum.</p>
   <div class="row"><button class="btn" data-act="tour">Ver cómo funciona</button><button class="btn ghost" data-close>Ya entendí</button></div>`;
@@ -478,7 +483,7 @@ const TOUR=[
  ['#list','Desafíos de tus amigos','Cada día aparece un desafío bonus que te dejó alguien que te quiere. Es opcional: puedes cumplirlo cuando quieras, incluso durante todo diciembre, y subir una foto de prueba.'],
  ['#secreto','Sobre secreto','Completa los 10 retos (los pases libres cuentan) y se abre un sobre secreto con un premio.'],
  ['#album','Tu álbum','Todas las fotos que subas se juntan aquí. Al final del festival vas a tener el recuerdo completo.'],
- ['#como','Cómo funciona','Si se te olvida algo, aquí vuelves a ver la bienvenida y este paseo. ¡A disfrutar tu Noripalooza!']];
+ ['#como','Cómo funciona','Si se te olvida algo, aquí vuelves a ver cómo funciona y este paseo. La bienvenida la encuentras al final de la página. ¡A disfrutar tu Noripalooza!']];
 let tourI=-1;
 function tourShow(){document.querySelectorAll('.tour-hl').forEach(x=>x.classList.remove('tour-hl'));
  if(tourI<0||tourI>=TOUR.length){$('tour').hidden=true;tourI=-1;return}
@@ -509,6 +514,8 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  if(g&&g.dataset.act==='secreto'){secretOpen=true;renderSecreto();return}
  if(g&&g.dataset.act==='verConfeti'){confetti();return}
  if(g&&g.dataset.act==='tour'){tourStart();return}
+ if(g&&g.dataset.act==='comoFunciona'){bienvenida();return}
+ if(g&&g.dataset.act==='discurso'){discurso();return}
  if(g&&g.dataset.act==='noInstalar'){lsSet('nori_instalar_no','1');renderInstalar();return}
  if(g&&g.dataset.act==='vistaNori'){vistaNori();return}
  if(g&&g.dataset.act==='enviarMsg'){const t=$('nuevoMsg').value.trim();if(!t)return;if(await post('/api/luis',{tipo:'mensaje',text:t})){setBanner('Mensaje enviado.')}return}
