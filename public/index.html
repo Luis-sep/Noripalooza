@@ -261,9 +261,11 @@ async function api(path,opts={}){
  const j=await r.json().catch(()=>({}));
  if(!r.ok)throw new Error(j.error||'red');
  return j}
+let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden){hiddenAt=Date.now();return}
+ if(S&&hiddenAt&&(Date.now()-hiddenAt>3*60*1000||new Date().toLocaleDateString('en-CA',{timeZone:'America/Santiago'})!==S.today)&&$('overlay').hidden)load()});
 async function load(){try{S=await api('/api/estado');showApp();
  if(S.today==='2026-12-01'&&!isLuis()&&lsGet('nori_party')!=='1'){lsSet('nori_party','1');confetti()}
- else if(!isLuis()&&(+lsGet('nori_hola_n')||0)<2){lsSet('nori_hola_n',String((+lsGet('nori_hola_n')||0)+1));discurso()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
+ else if(!isLuis()&&S.today>='2026-11-27'&&(+lsGet('nori_bienv_n')||0)<2){lsSet('nori_bienv_n',String((+lsGet('nori_bienv_n')||0)+1));discurso()}}catch(e){if(e.message!=='auth')setBanner('No se pudo cargar. Revisa tu conexión y recarga la página.')}}
 async function post(path,body){if(busy)return;busy=true;
  try{S=await api(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});setBanner('');render();return true}
  catch(e){if(e.message!=='auth')setBanner(ERR[e.message]||'No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.');return false}
@@ -304,7 +306,7 @@ function renderAlbum(){const all=[];S.days.forEach(d=>(data(d.k).photos||[]).for
 function renderPanel(){const el=$('panel');if(!isLuis()){el.innerHTML='';return}
  const rows=S.days.map(d=>{const x=data(d.k);return`<tr><td>${d.dow} ${d.n}</td><td>${esc(d.t)}</td><td>${x.opened?'Sí':'No'}</td><td>${x.pass?'Pase libre':x.done?'Cumplido':'—'}</td><td>${esc(x.mood||'—')}</td><td>${esc(x.cumplio||'—')}</td><td>${(x.photos||[]).length}</td></tr>`}).join('');
  const notas=S.days.map(d=>`<div class="nedit"><b>${d.dow} ${d.n} · ${esc(d.t)}</b><label class="lbl" for="nc-${d.k}" style="margin:0 0 4px">Tu nota</label><textarea id="nc-${d.k}">${esc(notaDrafts[d.k]?.carta??d.carta??'')}</textarea><label class="lbl" for="np-${d.k}" style="margin:8px 0 4px">Pista del regalo (opcional)</label><input class="inp" id="np-${d.k}" value="${esc(notaDrafts[d.k]?.pista??d.pista??'')}"><label class="lbl" for="ns-${d.k}" style="margin:8px 0 4px">Canción del día (enlace de Spotify)</label><input class="inp" id="ns-${d.k}" placeholder="${esc(d.c+' · '+d.a)}" value="${esc(notaDrafts[d.k]?.cancion??(d.spotify?'https://open.spotify.com/'+(String(d.spotify).includes(':')?String(d.spotify).replace(':','/'):'track/'+d.spotify):''))}"><div class="row"><button class="btn ghost" data-nota="${d.k}">Guardar nota</button></div></div>`).join('');
- el.innerHTML=`<h3 class="sec" style="margin-top:20px">Panel de Luis</h3><p class="saved">Ves cómo va Nori sin leer lo que escribe: eso queda para ella. Puedes abrir cualquier sobre para revisarlo.</p>
+ el.innerHTML=`<h3 class="sec" style="margin-top:20px">Panel de Luis</h3>${S.visto?`<p class="reto" style="margin:6px 0">👀 Nori entró por última vez: <b>${fmt(S.visto)}</b></p>`:'<p class="reto" style="margin:6px 0">👀 Nori todavía no entra a la app.</p>'}<p class="saved">Ves cómo va Nori sin leer lo que escribe: eso queda para ella. Puedes abrir cualquier sobre para revisarlo.</p>
  ${amigosAdmin()}
  <details class="extra" data-sec="progreso" ${openSecs.has('progreso')?'open':''}><summary><h3>Cómo va Nori, día a día</h3></summary><div class="scroll"><table class="ptable"><thead><tr><th>Día</th><th>Sobre</th><th>Abierto</th><th>Reto</th><th>Ánimo</th><th>¿Se cumplió?</th><th>Fotos</th></tr></thead><tbody>${rows}</tbody></table></div></details>
   <details class="extra" data-sec="mensajespara" ${openSecs.has('mensajespara')?'open':''}><summary><h3>Mensajes para Nori</h3></summary><p class="saved">Lo que escribas aquí le aparece arriba en la app, como "Un mensaje de Luis".</p><textarea id="nuevoMsg" placeholder="Pensando en ti…"></textarea><div class="row"><button class="btn" data-act="enviarMsg">Enviar mensaje</button></div>${(S.mensajes||[]).map(m=>`<div class="nedit"><small class="saved">${fmt(m.at)}</small><p style="margin:4px 0 0;white-space:pre-wrap">${esc(m.text)}</p><div class="row"><button class="btn ghost" data-borrar="${esc(m.id)}">Borrar</button></div></div>`).join('')}</details>
