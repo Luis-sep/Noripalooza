@@ -62,6 +62,12 @@ export async function onRequestPost({ request, env, data }) {
   } else if (body.tipo === 'ordenDesafios') {
     if (!Array.isArray(body.orden)) return json({ error: 'orden' }, 400);
     await env.NORI_KV.put('desafiosOrden', JSON.stringify(body.orden.map(String).slice(0, 200)));
+  } else if (body.tipo === 'catDesafio') {
+    if (!['divertido', 'creativo', 'profundo', ''].includes(body.cat)) return json({ error: 'cat' }, 400);
+    const cats = (await env.NORI_KV.get('desafiosCat', 'json')) || {};
+    if (body.cat) cats[String(body.id)] = body.cat; else delete cats[String(body.id)];
+    await env.NORI_KV.put('desafiosCat', JSON.stringify(cats));
+    if (Array.isArray(body.orden)) await env.NORI_KV.put('desafiosOrden', JSON.stringify(body.orden.map(String).slice(0, 200)));
   } else if (body.tipo === 'ocultar') {
     const key = 'amigo:' + String(body.id || '');
     const cur = await env.NORI_KV.get(key, 'json');
