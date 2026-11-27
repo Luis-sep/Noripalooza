@@ -59,6 +59,9 @@ export async function onRequestPost({ request, env, data }) {
     if (cur.fotoId === mid) delete cur.fotoId;
     await env.NORI_KV.delete('foto:' + mid);
     await env.NORI_KV.put(key, JSON.stringify(cur));
+  } else if (body.tipo === 'ordenDesafios') {
+    if (!Array.isArray(body.orden)) return json({ error: 'orden' }, 400);
+    await env.NORI_KV.put('desafiosOrden', JSON.stringify(body.orden.map(String).slice(0, 200)));
   } else if (body.tipo === 'ocultar') {
     const key = 'amigo:' + String(body.id || '');
     const cur = await env.NORI_KV.get(key, 'json');
