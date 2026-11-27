@@ -14,7 +14,10 @@ export async function onRequestPost({ request, env, data }) {
     const m = typeof body.cancion === 'string' ? body.cancion.match(/(track|playlist|album)[/:]([A-Za-z0-9]{22})/) : null;
     const spotify = m ? m[1] + ':' + m[2] : null;
     if (typeof body.cancion === 'string' && body.cancion.trim() && !spotify) return json({ error: 'cancion' }, 400);
-    await env.NORI_KV.put('nota:' + d.k, JSON.stringify({ carta, pista, spotify }));
+    const prev = (await env.NORI_KV.get('nota:' + d.k, 'json')) || {};
+    const staffDe = typeof body.staffDe === 'string' ? body.staffDe : prev.staffDe;
+    const staffText = typeof body.staffText === 'string' ? body.staffText.slice(0, 1000) : prev.staffText;
+    await env.NORI_KV.put('nota:' + d.k, JSON.stringify({ carta, pista, spotify, staffDe, staffText }));
   } else if (body.tipo === 'resumen') {
     const text = typeof body.text === 'string' ? body.text.slice(0, 20000) : '';
     await env.NORI_KV.put('resumen', JSON.stringify({ text, at: new Date().toISOString() }));
@@ -25,7 +28,8 @@ export async function onRequestPost({ request, env, data }) {
     const text = typeof body.text === 'string' ? body.text.trim().slice(0, 1000) : '';
     if (!text) return json({ error: 'vacio' }, 400);
     const list = (await env.NORI_KV.get('mensajes', 'json')) || [];
-    list.push({ id: crypto.randomUUID().slice(0, 8), text, at: new Date().toISOString() });
+    const de = ['luis', 'lucas', 'alvaro', 'naireth', 'remi', 'ignacia', 'sofia', 'staff'].includes(body.de) ? body.de : 'luis';
+    list.push({ id: crypto.randomUUID().slice(0, 8), text, de, at: new Date().toISOString() });
     await env.NORI_KV.put('mensajes', JSON.stringify(list.slice(-100)));
   } else if (body.tipo === 'borrarMensaje') {
     const list = (await env.NORI_KV.get('mensajes', 'json')) || [];
