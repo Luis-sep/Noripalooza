@@ -118,6 +118,14 @@ textarea{width:100%;min-height:120px;font:inherit;font-size:16px;padding:12px;bo
 .btn.sm{padding:6px 10px;font-size:13px;min-height:0}
 details.extra>summary{cursor:pointer;list-style:none}details.extra>summary::-webkit-details-marker{display:none}
 details.extra>summary h3{display:inline}details.extra>summary::before{content:'▸ ';color:var(--forest)}details.extra[open]>summary::before{content:'▾ '}
+.asgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-top:12px}
+.asobre{font:inherit;border:0;background:var(--card);border-radius:16px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;box-shadow:0 2px 0 var(--line);transition:transform .15s}
+.asobre:active{transform:scale(.96)}.asobre svg{width:90px;height:auto}.asobre b{color:var(--forest)}.asobre small{font-size:12px;opacity:.7}
+.asobre.leido{opacity:.75}.asobre.leido svg path{fill:var(--gold)}
+.asopen{grid-column:1/-1;animation:asIn .35s ease}
+@keyframes asIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.mc{position:fixed;top:40vh;width:9px;height:14px;border-radius:2px;z-index:99;pointer-events:none;animation:mcF 1.4s ease-out forwards}
+@keyframes mcF{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(calc(var(--dx)*.5),-25vh) rotate(calc(var(--r)*.4))}100%{transform:translate(var(--dx),60vh) rotate(var(--r));opacity:0}}
 </style>
 <style>
 .login{max-width:420px;margin:28px auto 0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
@@ -337,6 +345,12 @@ function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.
 
 function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${a.anecdota?`<p class="anec"><b>Una anécdota:</b> ${esc(a.anecdota)}</p>`:''}${luis&&a.jugo?`<p class="saved">Jugó el quiz${a.puntaje!=null?': '+a.puntaje+' de 5':''}.</p>`:''}${(a.media||[]).map(m=>m.tipo==='video'?`<video controls playsinline preload="metadata" src="/api/foto/${encodeURIComponent(m.id)}"></video>`:`<img src="/api/foto/${encodeURIComponent(m.id)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`).join('')}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button><button class="btn ghost" data-borraramigo="${esc(a.id)}">Borrar</button><label class="btn ghost" for="am-${esc(a.id)}">Agregar foto o video</label><input class="sr" type="file" accept="image/*,video/*" id="am-${esc(a.id)}" data-addmedia="${esc(a.id)}"></div>`:''}</div>`).join('')}
 
+let amAbiertos=new Set((()=>{try{return JSON.parse(lsGet('nori_amsobres')||'[]')}catch(_){return[]}})()),amVisto=new Set();
+function sobresAmigos(vis){const n=vis.filter(a=>amAbiertos.has(a.id)).length;
+ return`<div id="amSobres"><p class="reto">Tu gente te dejó <b>${vis.length} ${vis.length===1?'mensaje':'mensajes'}</b>. Ábrelos con calma, no hay apuro: se quedan aquí para siempre.</p><p class="saved">Abriste ${n} de ${vis.length}.</p>
+ <div class="asgrid">${vis.map(a=>amVisto.has(a.id)?`<div class="asopen">${amigosHtml([a],false)}<div class="row"><button class="btn ghost sm" data-ascerrar="${esc(a.id)}">Cerrar sobre</button></div></div>`
+ :`<button class="asobre ${amAbiertos.has(a.id)?'leido':''}" data-asobre="${esc(a.id)}" aria-label="Abrir el mensaje de ${esc(a.nombre)}"><svg viewBox="0 0 120 80" aria-hidden="true"><rect x="2" y="8" width="116" height="70" rx="8" fill="var(--terra)"/><path d="M2 16 Q2 8 10 8 L110 8 Q118 8 118 16 L60 50 Z" fill="var(--forest)"/><circle cx="60" cy="46" r="8" fill="var(--gold)"/></svg><b>${esc(a.nombre)}</b><small>${amAbiertos.has(a.id)?'Ya lo abriste · leer otra vez':'Toca para abrir'}</small></button>`).join('')}</div></div>`}
+function rerenderSobres(){const box=$('amSobres');if(!box)return;const vis=(S.amigos||[]).filter(a=>!a.oculto);box.outerHTML=sobresAmigos(vis)}
 function rankHtml(full){const T=S.quiz.titulos||[];const l=(S.amigos||[]).filter(a=>a.jugo&&a.puntaje!=null&&!a.oculto).sort((x,y)=>y.puntaje-x.puntaje);
  if(!l.length)return'';
  if(full)return`<div class="rank">${l.map(a=>`<div><span><b>${esc(a.nombre)}</b><br>${esc(T[a.puntaje]||'')}</span><span class="pts">${a.puntaje}/5</span></div>`).join('')}</div>`;
@@ -348,10 +362,10 @@ function podioHtml(){const T=S.quiz&&S.quiz.titulos||[];const l=(S.amigos||[]).f
  return`<div class="rank">${top.map((a,i)=>`<div><span><b>${esc(a.nombre)}</b><br>${esc(T[a.puntaje]||'')}</span><span class="pts">${med[i]}</span></div>`).join('')}</div>${rest?`<p class="saved">Y ${rest===1?'una persona más también jugó':rest+' personas más también jugaron'} por ti.</p>`:''}`}
 
 function vistaNori(){const vis=(S.amigos||[]).filter(a=>!a.oculto);const pod=S.quiz&&S.quiz.mostrar?rankHtml():'';
- $('sheet').innerHTML=`<div class="top"><span>Así lo verá Nori el 1 de diciembre</span><button class="close" data-close aria-label="Cerrar">×</button></div><h2 id="sheet-title">Lo que tu gente dice de ti</h2>${vis.length?amigosHtml(vis,false):'<p class="saved">Todavía no llegan mensajes.</p>'}${pod?`<section class="extra"><h3>¿Quién te conoce más?</h3><p class="saved">Tus amigos jugaron un quiz sobre ti. Estos son todos los que jugaron:</p>${pod}</section>`:''}`;
+ $('sheet').innerHTML=`<div class="top"><span>Así lo verá Nori el 1 de diciembre</span><button class="close" data-close aria-label="Cerrar">×</button></div><h2 id="sheet-title">Lo que tu gente dice de ti</h2>${vis.length?sobresAmigos(vis):'<p class="saved">Todavía no llegan mensajes.</p>'}${pod?`<section class="extra"><h3>¿Quién te conoce más?</h3><p class="saved">Tus amigos jugaron un quiz sobre ti. Estos son todos los que jugaron:</p>${pod}</section>`:''}`;
  openKey=null;$('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
 
-function extrasHtml(ro){const dl=S.desafios||[],dn=dl.filter(d=>d.hecho).length;let h=dl.length?`<section class="extra"><h3>Desafíos cumplidos</h3><p class="reto">Cumpliste ${dn} de ${dl.length} desafíos de tus amigos.</p>${dn?`<div class="insignias">${'<span>★</span>'.repeat(dn)}</div>`:''}</section>`:'';h+=`<section class="extra"><h3>Tu carta del festival</h3>`;
+function extrasHtml(ro){const dl=S.desafios||[],dn=dl.filter(d=>d.hecho).length;let h=dl.length?`<section class="extra"><h3>Desafíos cumplidos</h3><p class="reto">Cumpliste ${dn} de ${dl.length} desafíos bonus de tus amigos. Los que faltan siguen aquí durante todo diciembre.</p>${dn?`<div class="insignias">${'<span>★</span>'.repeat(dn)}</div>`:''}</section>`:'';h+=`<section class="extra"><h3>Tu carta del festival</h3>`;
  if(S.resumen)h+=`<div class="letter">${esc(S.resumen)}</div>`;
  else if(!ro)h+=`<p class="saved">Si quieres, copia tu semana y mándasela a Luis: él te va a preparar una carta sobre todo lo que viviste.</p><div class="row"><button class="btn ghost" data-act="copy">Copiar mi semana</button><span class="saved" id="copied"></span></div><textarea id="weekbox" hidden readonly></textarea>`;
  else h+=`<p class="saved">Todavía no hay carta.</p>`;
@@ -387,7 +401,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
    if(!x.done)h+=`<button class="btn ghost" data-act="pass" ${(!x.pass&&passesUsed()>=PASSES)?'disabled':''}>${x.pass?'Quitar pase libre':'Usar pase libre'}</button>`;
    h+=`</div>`}
   if(d.k==='d01'){const vis=(S.amigos||[]).filter(a=>!a.oculto);
-   h+=`<section class="extra"><h3>Lo que tu gente dice de ti</h3>${vis.length?amigosHtml(vis,false):`<p class="saved">${ro?'Todavía no llegan mensajes.':'Hoy no llegaron mensajes, pero tu gente te quiere igual.'}</p>`}</section>`;
+   h+=`<section class="extra"><h3>Lo que tu gente dice de ti</h3>${vis.length?sobresAmigos(vis):`<p class="saved">${ro?'Todavía no llegan mensajes.':'Hoy no llegaron mensajes, pero tu gente te quiere igual.'}</p>`}</section>`;
    if(!ro&&S.quiz.mostrar){const rk=rankHtml();if(rk)h+=`<section class="extra"><h3>¿Quién te conoce más?</h3><p class="saved">Tus amigos jugaron un quiz sobre ti. Estos son todos los que jugaron:</p>${rk}</section>`}}
   if(d.k==='d06'&&(d.unlocked||ro))h+=extrasHtml(ro)}
  s.innerHTML=h}
@@ -406,6 +420,8 @@ function renderSecreto(){const el=$('secreto');if(isLuis()){el.innerHTML='';retu
  if(!secretOpen){el.innerHTML=`<div class="secret"><h3>¡Lo lograste!</h3><p>Completaste tu Noripalooza. Tu sobre secreto está listo.</p><div class="row" style="justify-content:center"><button class="btn light" data-act="secreto">Abrir sobre secreto</button></div></div>`;return}
  el.innerHTML=`<div class="secret"><h3>Sobre secreto</h3><div class="body">${esc(S.secreto.text||'Luis tiene una sorpresa para ti. ¡Búscalo!')}</div></div>`}
 
+function miniConfeti(){if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;const cols=['#E2A729','#B85A2B','#7C9A4E','#E88B7A'];
+ for(let i=0;i<28;i++){const p=document.createElement('i');p.className='mc';p.style.cssText=`left:${50+(Math.random()*30-15)}vw;background:${cols[i%4]};--dx:${Math.random()*60-30}vw;--r:${Math.random()*720}deg;animation-delay:${Math.random()*.15}s`;document.body.appendChild(p);setTimeout(()=>p.remove(),1600)}}
 function confetti(){const party=$('party');party.hidden=false;
  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
  const c=$('confetti'),x=c.getContext('2d');const W=c.width=innerWidth,H=c.height=innerHeight;
@@ -415,10 +431,10 @@ function confetti(){const party=$('party');party.hidden=false;
  (function step(t){x.clearRect(0,0,W,H);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(p.y>H){p.y=-10;p.x=Math.random()*W}x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore()});
   if(t-t0<7000&&!party.hidden)requestAnimationFrame(step);else x.clearRect(0,0,W,H)})(t0)}
 
-function desafiosHtml(list,luis){return list.map(d=>`<div class="des ${d.hecho?'ok':''} ${d.oculto?'off':''}"><b>${d.nombre?esc(d.nombre)+' te desafía:':'Alguien te desafía:'}</b><p>${esc(d.texto)}</p>${(d.fotos||[]).length?`<div class="photos">${d.fotos.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Prueba del desafío" loading="lazy">`).join('')}</div>`:''}${luis?`<p class="saved">${d.oculto?'Oculto.':'Le aparece el '+esc(d.aparece||'')+'.'}${d.hecho?' Nori lo cumplió.':''}</p>`:`<div class="row"><button class="btn ${d.hecho?'ghost':''}" data-des="${esc(d.id)}" data-v="${d.hecho?'0':'1'}">${d.hecho?'Hecho ✓ (deshacer)':'¡Hecho!'}</button><label class="btn ghost" for="df-${esc(d.id)}">Subir prueba</label><input class="sr" type="file" accept="image/*" id="df-${esc(d.id)}" data-desfoto="${esc(d.id)}"></div>`}</div>`).join('')}
+function desafiosHtml(list,luis){return list.map(d=>`<div class="des ${d.hecho?'ok':''} ${d.oculto?'off':''}"><b>${d.nombre?'Desafío bonus de '+esc(d.nombre)+' · solo si te dan ganas 😄':'Desafío bonus · solo si te dan ganas 😄'}</b><p>${esc(d.texto)}</p>${(d.fotos||[]).length?`<div class="photos">${d.fotos.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Prueba del desafío" loading="lazy">`).join('')}</div>`:''}${luis?`<p class="saved">${d.oculto?'Oculto.':'Le aparece el '+esc(d.aparece||'')+'.'}${d.hecho?' Nori lo cumplió.':''}</p>`:`<div class="row"><button class="btn ${d.hecho?'ghost':''}" data-des="${esc(d.id)}" data-v="${d.hecho?'0':'1'}">${d.hecho?'Hecho ✓ (deshacer)':'¡Hecho!'}</button><label class="btn ghost" for="df-${esc(d.id)}">Subir prueba</label><input class="sr" type="file" accept="image/*" id="df-${esc(d.id)}" data-desfoto="${esc(d.id)}"></div>`}</div>`).join('')}
 function renderDesafios(){const el=$('desafios');if(isLuis()){el.innerHTML='';return}const l=S.desafios||[];if(!l.length){el.innerHTML='';return}
  const n=l.filter(d=>d.hecho).length;
- el.innerHTML=`<h3 class="sec">Desafíos de tus amigos</h3><p class="saved">Cada día aparece un desafío nuevo. Cúmplelos cuando quieras; cada uno cumplido es una insignia.</p><p class="carta" style="margin-top:10px"><b>Desde el 1 de diciembre</b>, envíale a cada amigo un video o audio contándole cómo te fue con su desafío.</p>${n?`<div class="insignias" aria-label="${n} insignias">${'<span>★</span>'.repeat(n)}</div>`:''}${desafiosHtml(l,false)}`}
+ el.innerHTML=`<h3 class="sec">Desafíos bonus de tus amigos</h3><p class="saved">Son un juego extra, totalmente opcionales: no cuentan para tus retos. Cada día aparece uno nuevo y <b>puedes cumplirlos con calma durante todo diciembre</b>. Cada uno cumplido es una insignia.</p><p class="carta" style="margin-top:10px"><b>Desde el 1 de diciembre</b>, envíale a cada amigo un video o audio contándole cómo te fue con su desafío.</p>${n?`<div class="insignias" aria-label="${n} insignias">${'<span>★</span>'.repeat(n)}</div>`:''}${desafiosHtml(l,false)}`}
 
 function allMedia(){const out=[];
  S.days.forEach(d=>(data(d.k).photos||[]).forEach(id=>out.push({id,tipo:'img',de:'Nori · '+d.dow+' '+d.n})));
@@ -430,7 +446,7 @@ function bienvenida(){openKey=null;
  $('sheet').innerHTML=`<div class="top"><span>Noripalooza · 27 nov — 6 dic</span><button class="close" data-close aria-label="Cerrar">×</button></div>
  <h2 id="sheet-title">Bienvenida al Festival de Creer y Crear</h2>
  <p class="reto">Durante diez días todo gira en torno a ti: tu creatividad, tu brillo y la gente que te quiere. Cada día se abre un sobre con un pequeño reto. No hay forma correcta de hacerlo; solo hay que jugar.</p>
- <div class="rank"><div><span><b>1.</b> Abre tu sobre cada día.</span></div><div><span><b>2.</b> Lleva una libreta o escribe aquí lo que descubras.</span></div><div><span><b>3.</b> Tienes 2 pases libres para saltarte un reto.</span></div><div><span><b>4.</b> Prohibido exigirte perfección.</span></div></div>
+ <div class="rank"><div><span><b>1.</b> Abre tu sobre cada día.</span></div><div><span><b>2.</b> Lleva una libreta o escribe aquí lo que descubras.</span></div><div><span><b>3.</b> Tienes 2 pases libres para saltarte un reto.</span></div><div><span><b>4.</b> Los desafíos de tus amigos son bonus: hazlos solo si te dan ganas, durante todo diciembre.</span></div><div><span><b>5.</b> Prohibido exigirte perfección.</span></div></div>
  <p class="reto" style="margin-top:14px"><b>Saca muchas fotos</b> durante estos días y súbelas en el sobre de cada día: se van juntando en tu álbum.</p>
  <p class="carta" style="margin-top:16px"><b>Con amor, Luis</b></p>
  <div class="row"><button class="btn" data-act="tour">Ver cómo funciona</button><button class="btn ghost" data-close>Ya entendí</button></div>`;
@@ -445,7 +461,7 @@ const TOUR=[
  ['#hero','Tu día','Aquí arriba ves el día de hoy. Cuando sea el día, toca el botón para abrir tu sobre. Y fíjate en tu imagen: va cambiando durante el festival.'],
  ['#list','Line-up','Los 10 días del festival. Cada sobre se abre en su día y trae una frase, un reto, una nota de Luis y la canción del día.'],
  ['#list','Dentro de cada sobre','Escribe qué esperas del día, marca cómo te sentiste, cuenta lo que descubriste y sube las fotos del día. Cuando termines, marca el reto como cumplido o usa uno de tus 2 pases libres.'],
- ['#list','Desafíos de tus amigos','Desde el viernes, cada día aparece un desafío que te dejó alguien que te quiere. Cúmplelos cuando quieras y sube una foto de prueba.'],
+ ['#list','Desafíos de tus amigos','Cada día aparece un desafío bonus que te dejó alguien que te quiere. Es opcional: puedes cumplirlo cuando quieras, incluso durante todo diciembre, y subir una foto de prueba.'],
  ['#secreto','Sobre secreto','Completa los 10 retos (los pases libres cuentan) y se abre un sobre secreto con un premio.'],
  ['#album','Tu álbum','Todas las fotos que subas se juntan aquí. Al final del festival vas a tener el recuerdo completo.'],
  ['#como','Cómo funciona','Si se te olvida algo, aquí vuelves a ver la bienvenida y este paseo. ¡A disfrutar tu Noripalooza!']];
@@ -488,6 +504,8 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  const dz=e.target.closest('[data-des]');if(dz){post('/api/desafio',{id:dz.dataset.des,hecho:dz.dataset.v==='1'});return}
  const ba=e.target.closest('[data-borraramigo]');if(ba){if(ba.dataset.ok!=='1'){ba.dataset.ok='1';ba.textContent='¿Seguro? Toca de nuevo para borrar';ba.style.color='var(--terra)';return}
   if(await post('/api/luis',{tipo:'borrarAmigo',id:ba.dataset.borraramigo}))setBanner('Mensaje borrado.');return}
+ const ao=e.target.closest('[data-asobre]');if(ao){const id=ao.dataset.asobre;const nuevo=!amAbiertos.has(id);amVisto.add(id);if(!isLuis()){amAbiertos.add(id);lsSet('nori_amsobres',JSON.stringify([...amAbiertos]))}else amAbiertos.add(id);rerenderSobres();if(nuevo)miniConfeti();const el=document.querySelector('.asopen');return}
+ const ac=e.target.closest('[data-ascerrar]');if(ac){amVisto.delete(ac.dataset.ascerrar);rerenderSobres();return}
  const bm=e.target.closest('[data-borrarmedia]');if(bm){if(bm.dataset.ok!=='1'){bm.dataset.ok='1';bm.textContent='¿Seguro? Toca de nuevo';bm.style.color='var(--terra)';return}
   if(await post('/api/luis',{tipo:'borrarMedia',id:bm.dataset.amigo,mediaId:bm.dataset.borrarmedia}))setBanner('Archivo borrado.');return}
  const oc=e.target.closest('[data-ocultar]');if(oc){post('/api/luis',{tipo:'ocultar',id:oc.dataset.ocultar,oculto:oc.dataset.v==='1'});return}
