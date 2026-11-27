@@ -297,7 +297,7 @@ function renderHero(){const h=$('hero');const first=S.days[0].date,last=S.days[S
  const av=AVA[avatarFor(t)];h.innerHTML=`<div class="avabox"><img class="ava" src="${av[1]}" alt="${av[0]}"><span class="avanext">${av[3]}</span></div>`+body+`<div class="stamps" aria-label="${doneN} de 10 retos cumplidos">${stamps}</div><p class="k" style="margin-top:8px">${doneN} de 10 retos · ${PASSES-passesUsed()} pases libres</p>`}
 
 function renderList(){$('list').innerHTML=S.days.map(d=>{const[s,c]=status(d);
- return`<button class="day ${d.date===S.today?'today':''}" data-open="${d.k}"><span class="d"><span>${d.dow}</span><b>${d.n}</b></span><span class="t"><b>${esc(d.t)}</b><span>${esc(d.s)}</span></span><span class="pill ${c}">${s}</span></button>`}).join('')}
+ return`<button class="day ${d.date===S.today?'today':''}" data-open="${d.k}"><span class="d"><span>${d.dow}</span><b>${d.n}</b></span><span class="t"><b>${esc(d.t)}</b></span><span class="pill ${c}">${s}</span></button>`}).join('')}
 
 function renderAlbum(){const all=[];S.days.forEach(d=>(data(d.k).photos||[]).forEach(id=>all.push({id,d})));
  $('album').innerHTML=all.length?`<div class="album">${all.map(({id,d})=>`<figure><img src="/api/foto/${encodeURIComponent(id)}" alt="Foto del ${d.dow} ${d.n}" loading="lazy"><figcaption>${d.n} ${d.m}</figcaption></figure>`).join('')}</div>`
