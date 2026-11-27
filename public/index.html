@@ -126,6 +126,7 @@ details.extra>summary h3{display:inline}details.extra>summary::before{content:'�
 @keyframes asIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .mc{position:fixed;top:40vh;width:9px;height:14px;border-radius:2px;z-index:99;pointer-events:none;animation:mcF 1.4s ease-out forwards}
 @keyframes mcF{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(calc(var(--dx)*.5),-25vh) rotate(calc(var(--r)*.4))}100%{transform:translate(var(--dx),60vh) rotate(var(--r));opacity:0}}
+.discurso p{margin:0 0 12px;line-height:1.55}.discurso .firma{margin-top:16px;color:var(--forest)}
 </style>
 <style>
 .login{max-width:420px;margin:28px auto 0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
@@ -451,11 +452,18 @@ function allMedia(){const out=[];
 function bienvenida(){openKey=null;
  $('sheet').innerHTML=`<div class="top"><span>Noripalooza · 27 nov — 6 dic</span><button class="close" data-close aria-label="Cerrar">×</button></div>
  <h2 id="sheet-title">Bienvenida al Festival de Creer y Crear</h2>
- <p class="reto">Durante diez días todo gira en torno a ti: tu creatividad, tu brillo y la gente que te quiere. Cada día se abre un sobre con un pequeño reto. No hay forma correcta de hacerlo; solo hay que jugar.</p>
+ <div class="discurso"><p>Nori:</p>
+ <p>Hoy empieza tu festival. Durante diez días el escenario es tuyo y el público somos todos los que te queremos.</p>
+ <p>Esta no es una semana cualquiera. Son días para afinar los sentidos. Que tu <b>vista</b> se agudice para notar lo que antes pasaba de largo: la luz entre los árboles, un color que te llama, la belleza escondida en lo de todos los días. Que tu <b>oído</b> se agudice para escuchar las canciones, las risas y las palabras de tu gente. Y sobre todo, para volver a escuchar esa voz tuya que a veces se queda callada, la que sabe lo que te hace feliz.</p>
+ <p>Por eso este es el Festival de <b>Creer y Crear</b>: creer en ti, sin peros, y crear sin pedirle permiso a nadie, ni siquiera a la perfección.</p>
+ <p>El objetivo es uno solo: <b>brillar</b>. No porque tengas que convertirte en alguien nuevo, sino porque ya lo eres. Esta semana es para recordarlo.</p>
+ <p>Vas a abrir sobres, crear sin miedo, reírte, caminar, equivocarte y volver a intentar. No hay forma correcta de hacerlo; solo hay que jugar.</p>
+ <p>Que empiece el Noripalooza.</p>
+ <p class="firma">Atte.,<br><b>El Staff del Noripalooza</b><br>🐾 Lucas, jefe de seguridad (acepta sobornos en premios)</p></div>
+ <h3 class="sec" style="margin-top:18px">Las reglas</h3>
  <div class="rank"><div><span><b>1.</b> Abre tu sobre cada día.</span></div><div><span><b>2.</b> Lleva una libreta o escribe aquí lo que descubras.</span></div><div><span><b>3.</b> Tienes 2 pases libres para saltarte un reto.</span></div><div><span><b>4.</b> Los desafíos de tus amigos son bonus: hazlos solo si te dan ganas, durante todo diciembre.</span></div><div><span><b>5.</b> Prohibido exigirte perfección.</span></div></div>
  <p class="reto" style="margin-top:14px"><b>Saca muchas fotos</b> durante estos días y súbelas en el sobre de cada día: se van juntando en tu álbum.</p>
- <p class="carta" style="margin-top:16px"><b>Con amor, Luis</b></p>
- <div class="row"><button class="btn" data-act="tour">Ver cómo funciona</button><button class="btn ghost" data-close>Ya entendí</button></div>`;
+  <div class="row"><button class="btn" data-act="tour">Ver cómo funciona</button><button class="btn ghost" data-close>Ya entendí</button></div>`;
  $('overlay').hidden=false;$('sheet').querySelector('.close').focus()}
 
 function renderInstalar(){const el=$('instalar');
