@@ -392,7 +392,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
   if(ro)h+=`<p class="saved">Vista de Luis: así lo verá Nori.</p>`;
   if(d.f)h+=`<p class="frase">“${esc(d.f)}”</p>`;
   h+=`<p class="reto">${esc(d.r)}</p>`;
-  if(!ro)h+=`<div class="respuesta"><label class="lbl" for="resp" style="margin-top:0">✍️ Tu respuesta al reto</label><p class="saved" style="margin:0 0 8px">¿No andas con tu libreta? Escríbela aquí.</p><textarea id="resp" rows="6" placeholder="Una frase, una lista, un recuerdo… Se guarda solo.">${esc(respDrafts[d.k]??x.respuesta??'')}</textarea><div class="row"><button class="btn ghost" data-act="saveResp">Guardar</button><span class="saved" id="savedResp">${x.respuesta?'Guardado ✓':''}</span></div><p class="saved" style="margin:6px 0 0">Solo tú la ves. Luis no puede leerla.</p></div>`;
+  if(!ro)h+=`<div class="respuesta"><label class="lbl" for="resp" style="margin-top:0">✍️ Tu respuesta al reto</label><p class="saved" style="margin:0 0 8px">¿No andas con tu libreta? Escríbela aquí.</p><textarea id="resp" rows="6" placeholder="Una frase, una lista, un recuerdo… Se guarda solo.">${esc(respDrafts[d.k]??x.respuesta??'')}</textarea><div class="row"><button class="btn" data-act="saveResp">Guardar respuesta</button><span class="saved" id="savedResp">${x.respuesta?'Guardado ✓':''}</span></div><p class="saved" style="margin:6px 0 0">Solo tú la ves. Luis no puede leerla.</p></div>`;
   if(d.carta)h+=`<p class="carta"><b>Una nota de Luis:</b> ${esc(d.carta)}</p>`;
   if(d.pista)h+=`<p class="carta"><b>Pista de tu regalo:</b> ${esc(d.pista)}</p>`;
   h+=songHtml(d);
@@ -547,7 +547,7 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  const cu=e.target.closest('[data-cum]');if(cu){post('/api/dia/'+k,{cumplio:x.cumplio===cu.dataset.cum?null:cu.dataset.cum});return}
  const a=e.target.closest('[data-act]');if(!a)return;
  if(a.dataset.act==='open'){const env=$('env');env&&env.classList.add('open');setTimeout(()=>post('/api/dia/'+k,{opened:true}),matchMedia('(prefers-reduced-motion:reduce)').matches?0:1100)}
- if(a.dataset.act==='saveResp'){pendNote={k,v:$('resp').value};await autoGuardar();return}
+ if(a.dataset.act==='saveResp'){pendNote={k,v:$('resp').value};const sr=$('savedResp');sr&&(sr.textContent='Guardando…');await autoGuardar();return}
  if(a.dataset.act==='save'){const ok=await post('/api/dia/'+k,{note:$('note').value,expectativa:$('exp').value});if(ok){delete drafts[k];delete expDrafts[k];render();const s=$('saved');s&&(s.textContent='Guardado')}}
  if(a.dataset.act==='done')post('/api/dia/'+k,{done:!x.done});
  if(a.dataset.act==='pass')post('/api/dia/'+k,{pass:!x.pass});
