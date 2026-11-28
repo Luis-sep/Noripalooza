@@ -127,6 +127,7 @@ details.extra>summary h3{display:inline}details.extra>summary::before{content:'�
 .mc{position:fixed;top:40vh;width:9px;height:14px;border-radius:2px;z-index:99;pointer-events:none;animation:mcF 1.4s ease-out forwards}
 @keyframes mcF{0%{transform:translate(0,0) rotate(0)}30%{transform:translate(calc(var(--dx)*.5),-25vh) rotate(calc(var(--r)*.4))}100%{transform:translate(var(--dx),60vh) rotate(var(--r));opacity:0}}
 .discurso p{margin:0 0 12px;line-height:1.55}.discurso .firma{margin-top:16px;color:var(--forest)}
+.respuesta{background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:14px;margin:12px 0 18px}.respuesta textarea{min-height:140px}
 </style>
 <style>
 .login{max-width:420px;margin:28px auto 0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px}
@@ -391,6 +392,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
   if(ro)h+=`<p class="saved">Vista de Luis: así lo verá Nori.</p>`;
   if(d.f)h+=`<p class="frase">“${esc(d.f)}”</p>`;
   h+=`<p class="reto">${esc(d.r)}</p>`;
+  if(!ro)h+=`<div class="respuesta"><label class="lbl" for="note" style="margin-top:0">✍️ Tu respuesta al reto</label><textarea id="note" rows="6" placeholder="Escribe aquí lo que quieras: una frase, una lista, un recuerdo… Se guarda solo.">${esc(drafts[d.k]??x.note??'')}</textarea><div class="row"><button class="btn ghost" data-act="save">Guardar</button><span class="saved" id="saved">${x.note?'Guardado ✓':''}</span></div><p class="saved" style="margin:6px 0 0">Solo tú la ves. Luis no puede leerla.</p></div>`;
   if(d.carta)h+=`<p class="carta"><b>Una nota de Luis:</b> ${esc(d.carta)}</p>`;
   if(d.pista)h+=`<p class="carta"><b>Pista de tu regalo:</b> ${esc(d.pista)}</p>`;
   h+=songHtml(d);
@@ -398,7 +400,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
    h+=`<label class="lbl" for="exp">¿Qué esperas de hoy?</label><input class="inp" id="exp" value="${esc(expDrafts[d.k]??x.expectativa??'')}" placeholder="Una frase basta">`;
    h+=`<span class="lbl" id="mood-l">¿Cómo te sentiste hoy?</span><div class="chips" role="group" aria-labelledby="mood-l">${MOODS.map(m=>`<button class="chip" data-mood="${m}" aria-pressed="${x.mood===m}">${m}</button>`).join('')}</div>`;
    h+=`<span class="lbl" id="cum-l">¿Se cumplió lo que esperabas?</span><div class="chips" role="group" aria-labelledby="cum-l">${CUMPLIO.map(m=>`<button class="chip" data-cum="${m}" aria-pressed="${x.cumplio===m}">${m}</button>`).join('')}</div>`;
-   h+=`<label class="lbl" for="note">Lo que descubrí hoy</label><textarea id="note" placeholder="Escribe aquí tu respuesta al reto…">${esc(drafts[d.k]??x.note??'')}</textarea><div class="row"><button class="btn ghost" data-act="save">Guardar</button><span class="saved" id="saved"></span></div>`}
+  }
   h+=`<span class="lbl">Fotos del día</span>${d.foto?`<p class="saved" style="margin:-4px 0 8px">Idea: ${esc(d.foto)}</p>`:''}<div class="row"><label class="btn ghost" for="file">Agregar fotos</label><input class="sr" type="file" id="file" accept="image/*" multiple><span class="saved" id="up"></span></div>`;
   const ph=x.photos||[];
   if(ph.length)h+=`<div class="photos">${ph.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Foto del día" loading="lazy">`).join('')}</div>`;
@@ -501,7 +503,7 @@ $('tourSkip').addEventListener('click',()=>{tourI=-1;tourShow()});
 
 function render(){if(!S)return;renderInstalar();renderMsgs();renderDesafios();renderSecreto();renderPanel();renderHero();renderList();renderAlbum();renderSheet()}
 function openSheet(k){openKey=k;$('overlay').hidden=false;renderSheet();const c=$('sheet').querySelector('.close');c&&c.focus()}
-function closeSheet(){openKey=null;$('overlay').hidden=true}
+function closeSheet(){if(pendNote)autoGuardar();openKey=null;$('overlay').hidden=true}
 
 async function compress(file){try{const bmp=await createImageBitmap(file);const sc=Math.min(1,1600/Math.max(bmp.width,bmp.height));
  const c=document.createElement('canvas');c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
@@ -555,7 +557,17 @@ document.addEventListener('input',e=>{const id=e.target.id;
  if(id==='cap'){capDraft=e.target.value;return}
  if(/^(nc|np|ns|nst|nsd)-/.test(id)){const k=id.slice(id.indexOf('-')+1);notaDrafts[k]={carta:$('nc-'+k).value,pista:$('np-'+k).value,cancion:$('ns-'+k).value,staffDe:$('nsd-'+k).value,staffText:$('nst-'+k).value};return}
  if(!openKey)return;
- if(id==='note'||id==='exp'){(id==='note'?drafts:expDrafts)[openKey]=e.target.value;const s=$('saved');s&&(s.textContent='Sin guardar')}});
+ if(id==='note'||id==='exp'){(id==='note'?drafts:expDrafts)[openKey]=e.target.value;const s=$('saved');s&&(s.textContent='Guardando…');
+  if(id==='note'){pendNote={k:openKey,v:e.target.value};clearTimeout(autoT);autoT=setTimeout(autoGuardar,1500)}}});
+let autoT=null;
+let pendNote=null;
+async function autoGuardar(){clearTimeout(autoT);const p=pendNote;if(!p)return;pendNote=null;
+ try{const r=await fetch('/api/dia/'+p.k,{method:'POST',credentials:'same-origin',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({note:p.v})});
+  if(!r.ok)throw 0;const j=await r.json().catch(()=>null);if(j&&j.days)S=j;if(drafts[p.k]===p.v)delete drafts[p.k];
+  const s=$('saved'),el=$('note');if(s&&el&&openKey===p.k&&el.value===p.v)s.textContent='Guardado ✓'}
+ catch(_){if(!pendNote)pendNote=p;const s=$('saved');s&&(s.textContent='Sin conexión: toca Guardar')}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendNote)autoGuardar()});
+window.addEventListener('pagehide',()=>{if(pendNote)autoGuardar()});
 document.addEventListener('change',async e=>{const cid=e.target.dataset&&e.target.dataset.cat;
  if(cid){const cat=e.target.value;const L=(S.desafios||[]).map(d=>d.id===cid?{...d,cat}:d);const rk={divertido:0,creativo:1,'':1,profundo:2};
   const fijos=L.filter(yaSalio),resto=L.filter(d=>!yaSalio(d)).map((d,i)=>[d,i]).sort((a,b)=>rk[a[0].cat||'']-rk[b[0].cat||'']||a[1]-b[1]).map(x=>x[0]);
