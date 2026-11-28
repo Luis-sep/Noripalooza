@@ -14,6 +14,7 @@ export async function onRequestPost({ request, env, params, data }) {
   const clean = {};
   if (body.opened === true) clean.opened = true;
   if ('note' in body) clean.note = str(body.note, 10000) ?? '';
+  if ('respuesta' in body) clean.respuesta = str(body.respuesta, 10000) ?? '';
   if ('expectativa' in body) clean.expectativa = str(body.expectativa, 500) ?? '';
   if ('mood' in body) clean.mood = MOODS.includes(body.mood) ? body.mood : null;
   if ('cumplio' in body) clean.cumplio = CUMPLIO.includes(body.cumplio) ? body.cumplio : null;

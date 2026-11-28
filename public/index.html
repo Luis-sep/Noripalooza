@@ -248,7 +248,7 @@ const PASSES=2;
 let S=null,openKey=null,busy=false,capDraft='',showOld=false,secretOpen=false;
 const fmt=at=>{try{return new Date(at).toLocaleString('es-CL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'America/Santiago'})}catch(_){return''}};
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(_){return null}};const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}};
-const drafts={},expDrafts={},notaDrafts={};
+const respDrafts={},drafts={},expDrafts={},notaDrafts={};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const setBanner=t=>{$('banner').textContent=t};
@@ -347,7 +347,7 @@ const spEmbed=v=>{const [t,id]=String(v).includes(':')?String(v).split(':'):['tr
 function songHtml(d){if(d.spotify)return`<span class="lbl">Canción del día</span>${spEmbed(d.spotify)}`;
  return`<a class="song" href="https://open.spotify.com/search/${encodeURIComponent(d.c+' '+d.a)}" target="_blank" rel="noopener"><span>Canción del día · abrir en Spotify</span><b>${esc(d.c)}</b> ${esc(d.a)}</a>`}
 
-function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
+function weekText(){return S.days.map(d=>{const x=data(d.k);return`${d.dow} ${d.n} ${d.m} · ${d.t}\nReto: ${d.r||''}\nMi respuesta al reto: ${x.respuesta||'—'}\nLo que esperaba: ${x.expectativa||'—'}\nÁnimo: ${x.mood||'—'}\n¿Se cumplió?: ${x.cumplio||'—'}\nLo que escribí: ${x.note||'—'}`}).join('\n\n')}
 
 function amigosHtml(list,luis){return list.map(a=>`<div class="amigo ${a.oculto?'off':''}"><b>${esc(a.nombre)}</b><p>${esc(a.mensaje)}</p>${a.anecdota?`<p class="anec"><b>Una anécdota:</b> ${esc(a.anecdota)}</p>`:''}${luis&&a.jugo?`<p class="saved">Jugó el quiz${a.puntaje!=null?': '+a.puntaje+' de 5':''}.</p>`:''}${(a.media||[]).map(m=>m.tipo==='video'?`<video controls playsinline preload="metadata" src="/api/foto/${encodeURIComponent(m.id)}"></video>`:`<img src="/api/foto/${encodeURIComponent(m.id)}" alt="Foto de ${esc(a.nombre)}" loading="lazy">`).join('')}${luis?`<div class="row"><button class="btn ghost" data-ocultar="${esc(a.id)}" data-v="${a.oculto?'0':'1'}">${a.oculto?'Mostrar a Nori':'Ocultar a Nori'}</button><button class="btn ghost" data-borraramigo="${esc(a.id)}">Borrar</button><label class="btn ghost" for="am-${esc(a.id)}">Agregar foto o video</label><input class="sr" type="file" accept="image/*,video/*" id="am-${esc(a.id)}" data-addmedia="${esc(a.id)}"></div>`:''}</div>`).join('')}
 
@@ -392,7 +392,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
   if(ro)h+=`<p class="saved">Vista de Luis: así lo verá Nori.</p>`;
   if(d.f)h+=`<p class="frase">“${esc(d.f)}”</p>`;
   h+=`<p class="reto">${esc(d.r)}</p>`;
-  if(!ro)h+=`<div class="respuesta"><label class="lbl" for="note" style="margin-top:0">✍️ Tu respuesta al reto</label><textarea id="note" rows="6" placeholder="Escribe aquí lo que quieras: una frase, una lista, un recuerdo… Se guarda solo.">${esc(drafts[d.k]??x.note??'')}</textarea><div class="row"><button class="btn ghost" data-act="save">Guardar</button><span class="saved" id="saved">${x.note?'Guardado ✓':''}</span></div><p class="saved" style="margin:6px 0 0">Solo tú la ves. Luis no puede leerla.</p></div>`;
+  if(!ro)h+=`<div class="respuesta"><label class="lbl" for="resp" style="margin-top:0">✍️ Tu respuesta al reto</label><p class="saved" style="margin:0 0 8px">¿No andas con tu libreta? Escríbela aquí.</p><textarea id="resp" rows="6" placeholder="Una frase, una lista, un recuerdo… Se guarda solo.">${esc(respDrafts[d.k]??x.respuesta??'')}</textarea><div class="row"><button class="btn ghost" data-act="saveResp">Guardar</button><span class="saved" id="savedResp">${x.respuesta?'Guardado ✓':''}</span></div><p class="saved" style="margin:6px 0 0">Solo tú la ves. Luis no puede leerla.</p></div>`;
   if(d.carta)h+=`<p class="carta"><b>Una nota de Luis:</b> ${esc(d.carta)}</p>`;
   if(d.pista)h+=`<p class="carta"><b>Pista de tu regalo:</b> ${esc(d.pista)}</p>`;
   h+=songHtml(d);
@@ -400,7 +400,7 @@ function renderSheet(){if(!openKey)return;const d=dayOf(openKey);const x=data(d.
    h+=`<label class="lbl" for="exp">¿Qué esperas de hoy?</label><input class="inp" id="exp" value="${esc(expDrafts[d.k]??x.expectativa??'')}" placeholder="Una frase basta">`;
    h+=`<span class="lbl" id="mood-l">¿Cómo te sentiste hoy?</span><div class="chips" role="group" aria-labelledby="mood-l">${MOODS.map(m=>`<button class="chip" data-mood="${m}" aria-pressed="${x.mood===m}">${m}</button>`).join('')}</div>`;
    h+=`<span class="lbl" id="cum-l">¿Se cumplió lo que esperabas?</span><div class="chips" role="group" aria-labelledby="cum-l">${CUMPLIO.map(m=>`<button class="chip" data-cum="${m}" aria-pressed="${x.cumplio===m}">${m}</button>`).join('')}</div>`;
-  }
+   h+=`<label class="lbl" for="note">Lo que descubrí hoy</label><textarea id="note" placeholder="Lo que te llevas de este día…">${esc(drafts[d.k]??x.note??'')}</textarea><div class="row"><button class="btn ghost" data-act="save">Guardar</button><span class="saved" id="saved"></span></div>`}
   h+=`<span class="lbl">Fotos del día</span>${d.foto?`<p class="saved" style="margin:-4px 0 8px">Idea: ${esc(d.foto)}</p>`:''}<div class="row"><label class="btn ghost" for="file">Agregar fotos</label><input class="sr" type="file" id="file" accept="image/*" multiple><span class="saved" id="up"></span></div>`;
   const ph=x.photos||[];
   if(ph.length)h+=`<div class="photos">${ph.map(id=>`<img src="/api/foto/${encodeURIComponent(id)}" alt="Foto del día" loading="lazy">`).join('')}</div>`;
@@ -547,6 +547,7 @@ if(e.target.closest('#party')){$('party').hidden=true;return}
  const cu=e.target.closest('[data-cum]');if(cu){post('/api/dia/'+k,{cumplio:x.cumplio===cu.dataset.cum?null:cu.dataset.cum});return}
  const a=e.target.closest('[data-act]');if(!a)return;
  if(a.dataset.act==='open'){const env=$('env');env&&env.classList.add('open');setTimeout(()=>post('/api/dia/'+k,{opened:true}),matchMedia('(prefers-reduced-motion:reduce)').matches?0:1100)}
+ if(a.dataset.act==='saveResp'){pendNote={k,v:$('resp').value};await autoGuardar();return}
  if(a.dataset.act==='save'){const ok=await post('/api/dia/'+k,{note:$('note').value,expectativa:$('exp').value});if(ok){delete drafts[k];delete expDrafts[k];render();const s=$('saved');s&&(s.textContent='Guardado')}}
  if(a.dataset.act==='done')post('/api/dia/'+k,{done:!x.done});
  if(a.dataset.act==='pass')post('/api/dia/'+k,{pass:!x.pass});
@@ -557,15 +558,15 @@ document.addEventListener('input',e=>{const id=e.target.id;
  if(id==='cap'){capDraft=e.target.value;return}
  if(/^(nc|np|ns|nst|nsd)-/.test(id)){const k=id.slice(id.indexOf('-')+1);notaDrafts[k]={carta:$('nc-'+k).value,pista:$('np-'+k).value,cancion:$('ns-'+k).value,staffDe:$('nsd-'+k).value,staffText:$('nst-'+k).value};return}
  if(!openKey)return;
- if(id==='note'||id==='exp'){(id==='note'?drafts:expDrafts)[openKey]=e.target.value;const s=$('saved');s&&(s.textContent='Guardando…');
-  if(id==='note'){pendNote={k:openKey,v:e.target.value};clearTimeout(autoT);autoT=setTimeout(autoGuardar,1500)}}});
+ if(id==='resp'){respDrafts[openKey]=e.target.value;const s=$('savedResp');s&&(s.textContent='Guardando…');pendNote={k:openKey,v:e.target.value};clearTimeout(autoT);autoT=setTimeout(autoGuardar,1500);return}
+ if(id==='note'||id==='exp'){(id==='note'?drafts:expDrafts)[openKey]=e.target.value;const s=$('saved');s&&(s.textContent='Sin guardar')}});
 let autoT=null;
 let pendNote=null;
 async function autoGuardar(){clearTimeout(autoT);const p=pendNote;if(!p)return;pendNote=null;
- try{const r=await fetch('/api/dia/'+p.k,{method:'POST',credentials:'same-origin',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({note:p.v})});
-  if(!r.ok)throw 0;const j=await r.json().catch(()=>null);if(j&&j.days)S=j;if(drafts[p.k]===p.v)delete drafts[p.k];
-  const s=$('saved'),el=$('note');if(s&&el&&openKey===p.k&&el.value===p.v)s.textContent='Guardado ✓'}
- catch(_){if(!pendNote)pendNote=p;const s=$('saved');s&&(s.textContent='Sin conexión: toca Guardar')}}
+ try{const r=await fetch('/api/dia/'+p.k,{method:'POST',credentials:'same-origin',keepalive:true,headers:{'content-type':'application/json'},body:JSON.stringify({respuesta:p.v})});
+  if(!r.ok)throw 0;const j=await r.json().catch(()=>null);if(j&&j.days)S=j;if(respDrafts[p.k]===p.v)delete respDrafts[p.k];
+  const s=$('savedResp'),el=$('resp');if(s&&el&&openKey===p.k&&el.value===p.v)s.textContent='Guardado ✓'}
+ catch(_){if(!pendNote)pendNote=p;const s=$('savedResp');s&&(s.textContent='Sin conexión: toca Guardar')}}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&pendNote)autoGuardar()});
 window.addEventListener('pagehide',()=>{if(pendNote)autoGuardar()});
 document.addEventListener('change',async e=>{const cid=e.target.dataset&&e.target.dataset.cat;
